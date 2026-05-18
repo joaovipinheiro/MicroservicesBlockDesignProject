@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # 🐘 PostgreSQL (Para player, tournament, registration e payment)
+  postgres:
+    image: postgres:15-alpine
+    container_name: arenamanager-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: arenamanager
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # 🍃 MongoDB (Para o notification-service)
+  mongodb:
+    image: mongo:6.0
+    container_name: arenamanager-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+  # 🔍 Elasticsearch (Para o analytics-service)
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+    container_name: arenamanager-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false # Desativado para facilitar o dev local do grupo
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" # Limita o uso de RAM para não travar os PCs
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    restart: unless-stopped
+
+# Declaração dos volumes para que os dados não sumam ao desligar o Docker
+volumes:
+  postgres_data:
+  mongo_data:
+  es_data:
