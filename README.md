@@ -381,13 +381,4 @@ curl -X POST http://localhost:8080/api/registrations \
 
 # ✅ Observações Finais
 
-Boa sorte codando o Gateway e o `player-service`.
-
-Quando os outros integrantes lerem esse README, saberão exatamente:
-
-- Como organizar as branches
-- Como executar o ecossistema
-- Como validar o Circuit Breaker
-- Como integrar os microsserviços corretamente
-
 Se alguém do grupo tiver problemas ao integrar as peças, basta alinhar via Pull Request e revisão de código.
