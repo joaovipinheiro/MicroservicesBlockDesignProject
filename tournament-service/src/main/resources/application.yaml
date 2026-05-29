@@ -1,3 +1,30 @@
 spring:
   application:
     name: tournament-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/arenamanager?currentSchema=tournament_schema
+    username: root
+    password: root
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: tournament_schema
+
+  # --- KAFKA ---
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+  eureka:
+    client:
+      enabled: false
+      register-with-eureka: false
+      fetch-registry: false
+
+
