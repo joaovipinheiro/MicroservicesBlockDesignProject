@@ -1,3 +1,11 @@
-spring:
-  application:
-    name: discovery-server
+server:
+  port: 8761
+
+eureka:
+  instance:
+    hostname: localhost
+  client:
+    registerWithEureka: false # Diz que ele é o chefe (servidor) e não precisa se registrar nele mesmo
+    fetchRegistry: false      # Também diz que ele não precisa buscar outros chefes
+    serviceUrl:
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
