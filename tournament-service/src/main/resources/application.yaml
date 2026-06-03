@@ -21,10 +21,10 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
-  eureka:
-    client:
-      enabled: false
-      register-with-eureka: false
-      fetch-registry: false
+# --- EUREKA ---
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
 
 

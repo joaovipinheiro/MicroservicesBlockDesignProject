@@ -42,6 +42,14 @@ services:
       - es_data:/usr/share/elasticsearch/data
     restart: unless-stopped
 
+  # 🔍 Eureka Discovery Server
+  discovery-server:
+    build: ./discovery-server
+    container_name: arenamanager-discovery-server
+    ports:
+      - "8761:8761"
+    restart: unless-stopped
+
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     container_name: arenamanager-kafka
