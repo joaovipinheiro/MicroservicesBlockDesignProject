@@ -1,3 +1,5 @@
+package br.com.arenamanager.payment_service.model;
+
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

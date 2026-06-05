@@ -1,30 +1,59 @@
 package br.com.arenamanager.payment_service.service;
 
+import br.com.arenamanager.payment_service.client.PlayerClient;
+import br.com.arenamanager.payment_service.client.PlayerDTO;
+import br.com.arenamanager.payment_service.dto.EventoPagamentoAprovado;
 import br.com.arenamanager.payment_service.model.Pagamento;
 import br.com.arenamanager.payment_service.model.StatusPagamento;
 import br.com.arenamanager.payment_service.repository.PagamentoRepository;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+
 import java.math.BigDecimal;
 
 @Service
 public class PagamentoService {
 
     private final PagamentoRepository pagamentoRepository;
+    private final PlayerClient playerClient;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    public PagamentoService(PagamentoRepository pagamentoRepository) {
+
+    public PagamentoService(PagamentoRepository pagamentoRepository,
+                            PlayerClient playerClient,
+                            KafkaTemplate<String, Object> kafkaTemplate) {
         this.pagamentoRepository = pagamentoRepository;
+        this.playerClient = playerClient;
+        this.kafkaTemplate = kafkaTemplate;
     }
 
     public Pagamento criarPagamento(Long usuarioId, Long torneioId, BigDecimal valor) {
         if (valor == null || valor.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("O valor do pagamento deve ser maior que zero");
+            throw new IllegalArgumentException("O valor do pagamento deve ser maior que zero!");
         }
 
         Pagamento pagamento = new Pagamento(usuarioId, torneioId, valor);
-
         pagamento.setStatus(StatusPagamento.APROVADO);
 
-        return pagamentoRepository.save(pagamento);
+
+        pagamento = pagamentoRepository.save(pagamento);
+
+        PlayerDTO jogador = playerClient.obterJogadorPorId(usuarioId);
+
+        EventoPagamentoAprovado evento = new EventoPagamentoAprovado(
+                pagamento.getId(),
+                jogador.nome(),
+                jogador.email(),
+                torneioId,
+                valor
+        );
+
+
+        kafkaTemplate.send("pagamentos-aprovados", evento);
+
+        System.out.println("Pagamento salvo e evento completo enviado ao Kafka!");
+
+        return pagamento;
     }
 
     public Pagamento buscarPorId(Long id) {
