@@ -47,7 +47,7 @@ services:
     build: ./discovery-server
     container_name: arenamanager-discovery-server
     ports:
-      - "8761:8761"
+      - "8762:8761"
     restart: unless-stopped
 
   kafka:
