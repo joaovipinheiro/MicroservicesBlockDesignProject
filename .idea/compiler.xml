@@ -7,9 +7,7 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="api-gateway" />
         <module name="discovery-server" />
-        <module name="player-service" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
@@ -27,6 +25,7 @@
       <module name="player-service" options="-parameters" />
       <module name="registration-service" options="-parameters" />
       <module name="tournament-service" options="-parameters" />
+      <module name="player-service" options="-parameters" />
     </option>
   </component>
 </project>

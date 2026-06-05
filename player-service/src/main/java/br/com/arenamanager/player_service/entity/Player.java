@@ -1,4 +1,4 @@
-package br.com.arenamanager.entity;
+package br.com.arenamanager.player_service.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
