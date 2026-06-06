@@ -15,7 +15,8 @@
   <component name="MavenProjectsManager">
     <option name="originalFiles">
       <list>
-        <option value="$PROJECT_DIR$/tournament-service/pom.xml" />
+        <option value="$PROJECT_DIR$/player-service/pom.xml" />
+        <option value="$PROJECT_DIR$/api-gateway/pom.xml" />
         <option value="$PROJECT_DIR$/discovery-server/pom.xml" />
         <option value="$PROJECT_DIR$/registration-service/pom.xml" />
       </list>
@@ -31,7 +32,6 @@
       </list>
     </option>
   </component>
-
   <component name="ProjectRootManager" version="2" languageLevel="JDK_21" default="true" project-jdk-name="21" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>
