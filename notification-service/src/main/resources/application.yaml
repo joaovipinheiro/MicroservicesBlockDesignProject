@@ -1,3 +1,119 @@
 spring:
   application:
     name: notification-service
+
+  # ===== MongoDB (Spring Boot 4.x usa spring.data.mongodb.uri) =====
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      username: root
+      password: root
+      database: notification_service
+      authentication-database: admin
+
+  # ===== Kafka =====
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: notification-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      enable-auto-commit: false
+      max-poll-records: 10
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    listener:
+      ack-mode: MANUAL_IMMEDIATE
+      missing-topics-fatal: false
+
+  # ===== Mail =====
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+        debug: false
+    default-encoding: UTF-8
+
+  # ===== Eureka =====
+  cloud:
+    discovery:
+      enabled: true
+
+# ===== Eureka Client =====
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port:8085}
+
+# ===== Servidor =====
+server:
+  port: 8085
+
+# ===== Actuator / Métricas =====
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  health:
+    mongo:
+      enabled: true
+    kafka:
+      enabled: true
+    mail:
+      enabled: false
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
+
+# ===== Logging =====
+logging:
+  level:
+    root: INFO
+    br.com.arenamanager.notification_service: DEBUG
+    org.springframework.kafka: INFO
+    org.springframework.data.mongodb: INFO
+  pattern:
+    console: "%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n"
+
+# ===== Configurações Customizadas =====
+notification:
+  kafka:
+    topic:
+      pagamentos-aprovados: pagamentos.aprovados
+      dlq: pagamentos.aprovados.dlq
+    retry:
+      max-attempts: 3
+      initial-interval-ms: 1000
+      multiplier: 2.0
+      max-interval-ms: 10000
+  mail:
+    from: ${MAIL_USERNAME:noreply@arenamanager.com}
+    from-name: ArenaManager
