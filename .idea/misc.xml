@@ -32,6 +32,8 @@
         <option value="$PROJECT_DIR$/registration-service/pom.xml" />
         <option value="$PROJECT_DIR$/tournament-service/pom.xml" />
         <option value="$PROJECT_DIR$/analytics-service/pom.xml" />
+        <option value="$PROJECT_DIR$/payment-service/pom.xml" />
+        <option value="$PROJECT_DIR$/notification-service/pom.xml" />
       </list>
     </option>
   </component>
