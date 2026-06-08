@@ -66,7 +66,8 @@ public class NotificationService implements ProcessPaymentNotificationUseCase {
     public void processPaymentApprovedNotification(PagamentoAprovadoEvent event) {
 
         // --- Idempotência: verificar se o evento já foi processado com sucesso ---
-        Optional<NotificationLog> existingLog = logRepository.findByEventId(event.eventId());
+        String eventId = String.valueOf(event.pagamentoId());
+        Optional<NotificationLog> existingLog = logRepository.findByEventId(eventId);
         if (existingLog.isPresent() &&
                 (existingLog.get().status() == NotificationStatus.SENT ||
                  existingLog.get().status() == NotificationStatus.DUPLICATE)) {
@@ -84,7 +85,7 @@ public class NotificationService implements ProcessPaymentNotificationUseCase {
         } catch (RuntimeException ex) {
             // Persiste o log de falha apenas se ainda não houver um log para este evento
             // (evita conflito de índice único em retentativas do Kafka)
-            if (!logRepository.existsByEventId(event.eventId())) {
+            if (!logRepository.existsByEventId(String.valueOf(event.pagamentoId()))) {
                 NotificationLog failedLog = buildLog(event, NotificationStatus.FAILED, ex.getMessage());
                 logRepository.save(failedLog);   // MongoException aqui propaga diretamente
             }
@@ -107,14 +108,14 @@ public class NotificationService implements ProcessPaymentNotificationUseCase {
                                      String errorMessage) {
         return new NotificationLog(
                 null,
-                event.eventId(),
-                event.paymentId(),
-                event.playerId(),
-                event.playerEmail(),
+                String.valueOf(event.pagamentoId()),
+                String.valueOf(event.pagamentoId()),
+                String.valueOf(event.torneioId()),
+                event.emailJogador(),
                 status,
                 errorMessage,
                 Instant.now(),
-                event.traceId()
+                String.valueOf(event.pagamentoId())
         );
     }
 }
