@@ -8,7 +8,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "tb_players")
+@Table(name = "tb_players", schema = "players") // <-- Adicione o schema aqui
 @Getter
 @Setter
 @NoArgsConstructor
