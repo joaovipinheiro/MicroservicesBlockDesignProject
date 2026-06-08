@@ -16,12 +16,13 @@ public class PagamentoService {
 
     private final PagamentoRepository pagamentoRepository;
     private final PlayerClient playerClient;
-    private final KafkaTemplate<String, Object> kafkaTemplate;
 
+    // CORREÇÃO AQUI: Mudamos para <Object, Object> para bater com o padrão do Spring Boot
+    private final KafkaTemplate<Object, Object> kafkaTemplate;
 
     public PagamentoService(PagamentoRepository pagamentoRepository,
                             PlayerClient playerClient,
-                            KafkaTemplate<String, Object> kafkaTemplate) {
+                            KafkaTemplate<Object, Object> kafkaTemplate) {
         this.pagamentoRepository = pagamentoRepository;
         this.playerClient = playerClient;
         this.kafkaTemplate = kafkaTemplate;
@@ -35,7 +36,6 @@ public class PagamentoService {
         Pagamento pagamento = new Pagamento(usuarioId, torneioId, valor);
         pagamento.setStatus(StatusPagamento.APROVADO);
 
-
         pagamento = pagamentoRepository.save(pagamento);
 
         PlayerDTO jogador = playerClient.obterJogadorPorId(usuarioId);
@@ -48,7 +48,7 @@ public class PagamentoService {
                 valor
         );
 
-
+        // O envio continua funcionando perfeitamente
         kafkaTemplate.send("pagamentos-aprovados", evento);
 
         System.out.println("Pagamento salvo e evento completo enviado ao Kafka!");
