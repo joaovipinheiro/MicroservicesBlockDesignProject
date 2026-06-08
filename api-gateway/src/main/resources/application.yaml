@@ -18,6 +18,16 @@ spring:
           predicates:
             - Path=/api/players/**
 
+        - id: registration-service
+          uri: lb://registration-service
+          predicates:
+            - Path=/api/registrations/**
+
+        - id: tournament-service
+          uri: lb://tournament-service
+          predicates:
+            - Path=/tournament/**
+
 eureka:
   client:
     service-url:
