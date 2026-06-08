@@ -20,6 +20,7 @@
         <option value="$PROJECT_DIR$/discovery-server/pom.xml" />
         <option value="$PROJECT_DIR$/registration-service/pom.xml" />
         <option value="$PROJECT_DIR$/tournament-service/pom.xml" />
+        <option value="$PROJECT_DIR$/analytics-service/pom.xml" />
       </list>
     </option>
   </component>
