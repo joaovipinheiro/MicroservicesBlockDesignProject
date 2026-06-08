@@ -79,8 +79,8 @@ public class PagamentoAprovadoKafkaConsumer {
         try {
             PagamentoAprovadoEvent event = deserialize(record.value());
 
-            log.info("Processing payment notification: eventId={}, paymentId={}, playerId={}, traceId={}",
-                    event.eventId(), event.paymentId(), event.playerId(), event.traceId());
+            log.info("Processing payment notification: pagamentoId={}, emailJogador={}, traceId={}",
+                    event.pagamentoId(), event.emailJogador(), record.offset());
 
             notificationUseCase.processPaymentApprovedNotification(event);
             ack.acknowledge();

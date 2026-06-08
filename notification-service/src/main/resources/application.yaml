@@ -107,8 +107,8 @@ logging:
 notification:
   kafka:
     topic:
-      pagamentos-aprovados: pagamentos.aprovados
-      dlq: pagamentos.aprovados.dlq
+      pagamentos-aprovados: pagamentos-aprovados
+      dlq: pagamentos-aprovados-dlq
     retry:
       max-attempts: 3
       initial-interval-ms: 1000

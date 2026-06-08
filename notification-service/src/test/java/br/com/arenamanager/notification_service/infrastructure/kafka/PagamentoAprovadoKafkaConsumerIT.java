@@ -176,17 +176,16 @@ class PagamentoAprovadoKafkaConsumerIT {
         kafkaTemplate.send(TOPIC, eventId, payload).get(10, TimeUnit.SECONDS);
 
         // Then — wait until NotificationLog is persisted
+        String expectedLogId = String.valueOf(event.pagamentoId());
         await().atMost(Duration.ofSeconds(20))
                 .pollInterval(Duration.ofMillis(200))
                 .untilAsserted(() -> {
-                    var logOpt = notificationLogMongoRepository.findByEventId(eventId);
+                    var logOpt = notificationLogMongoRepository.findByEventId(expectedLogId);
                     assertThat(logOpt).isPresent();
                     NotificationLogDocument savedLog = logOpt.get();
                     assertThat(savedLog.getStatus()).isEqualTo("SENT");
-                    assertThat(savedLog.getEventId()).isEqualTo(eventId);
-                    assertThat(savedLog.getPlayerId()).isEqualTo(event.playerId());
-                    assertThat(savedLog.getPlayerEmail()).isEqualTo(event.playerEmail());
-                    assertThat(savedLog.getTraceId()).isEqualTo(event.traceId());
+                    assertThat(savedLog.getEventId()).isEqualTo(expectedLogId);
+                    assertThat(savedLog.getPlayerEmail()).isEqualTo(event.emailJogador());
                     assertThat(savedLog.getErrorMessage()).isNull();
                 });
     }
@@ -381,18 +380,14 @@ class PagamentoAprovadoKafkaConsumerIT {
     }
 
     private PagamentoAprovadoEvent buildEventWithTraceId(String eventId, String traceId) {
+        // Usa o hashCode do eventId como Long pra garantir unicidade entre testes
+        long idAsLong = Math.abs((long) eventId.hashCode());
         return new PagamentoAprovadoEvent(
-                eventId,
-                UUID.randomUUID().toString(),
-                UUID.randomUUID().toString(),
-                "player@test.com",
+                idAsLong,
                 "Test Player",
-                UUID.randomUUID().toString(),
-                "Copa Arena 2026",
-                new BigDecimal("99.90"),
-                "BRL",
-                Instant.parse("2026-01-15T10:30:00Z"),
-                traceId
+                "player@test.com",
+                2L,
+                new BigDecimal("99.90")
         );
     }
 }
