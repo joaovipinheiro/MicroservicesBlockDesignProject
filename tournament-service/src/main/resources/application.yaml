@@ -1,3 +1,7 @@
+# Adicione este bloco no topo!
+server:
+  port: 8082
+
 spring:
   application:
     name: tournament-service
@@ -13,6 +17,7 @@ spring:
       hibernate:
         format_sql: true
         default_schema: tournament_schema
+        hbm2ddl.create_namespaces: true # Correção anterior mantida
 
   # --- KAFKA ---
   kafka:
@@ -26,5 +31,3 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
-
-

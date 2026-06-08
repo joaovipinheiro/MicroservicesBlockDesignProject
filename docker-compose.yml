@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # 🐘 PostgreSQL (Para player, tournament, registration e payment)
+  # 🐘 PostgreSQL
   postgres:
     image: postgres:15-alpine
     container_name: arenamanager-postgres
@@ -15,7 +15,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
 
-  # 🍃 MongoDB (Para o notification-service)
+  # 🍃 MongoDB
   mongodb:
     image: mongo:6.0
     container_name: arenamanager-mongo
@@ -28,18 +28,23 @@ services:
       - mongo_data:/data/db
     restart: unless-stopped
 
-  # 🔍 Elasticsearch (Para o analytics-service)
+  # 🔍 Elasticsearch (Atualizado para 8.15.0 para maior compatibilidade com drivers Java atuais)
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
     container_name: arenamanager-elasticsearch
     environment:
       - discovery.type=single-node
-      - xpack.security.enabled=false # Desativado para facilitar o dev local do grupo
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" # Limita o uso de RAM para não travar os PCs
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ports:
       - "9200:9200"
     volumes:
       - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
   # 🔍 Eureka Discovery Server
@@ -47,7 +52,7 @@ services:
     build: ./discovery-server
     container_name: arenamanager-discovery-server
     ports:
-      - "8762:8761"
+      - "8761:8761" # CORREÇÃO: Alinhado para a porta padrão 8761
     restart: unless-stopped
 
   kafka:
@@ -72,7 +77,6 @@ services:
       CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
     restart: unless-stopped
 
-# Declaração dos volumes para que os dados não sumam ao desligar o Docker
 volumes:
   postgres_data:
   mongo_data:
