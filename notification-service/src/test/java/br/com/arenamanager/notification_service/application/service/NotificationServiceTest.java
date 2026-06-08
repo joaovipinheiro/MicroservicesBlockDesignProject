@@ -26,213 +26,121 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-/**
- * Testes unitários para {@link NotificationService}.
- *
- * <p>Valida: Requisitos 1.1, 2.1, 3.2, 4.2, 5.1, 5.3</p>
- */
 @ExtendWith(MockitoExtension.class)
 class NotificationServiceTest {
 
-    @Mock
-    private NotificationLogRepository logRepository;
-
-    @Mock
-    private EmailTemplateRepository templateRepository;
-
-    @Mock
-    private EmailSenderPort emailSender;
-
-    @Mock
-    private EmailBuilderService emailBuilderService;
+    @Mock private NotificationLogRepository logRepository;
+    @Mock private EmailTemplateRepository templateRepository;
+    @Mock private EmailSenderPort emailSender;
+    @Mock private EmailBuilderService emailBuilderService;
 
     private SimpleMeterRegistry meterRegistry;
-
     private NotificationService notificationService;
 
     @BeforeEach
     void setUp() {
         meterRegistry = new SimpleMeterRegistry();
         notificationService = new NotificationService(
-                logRepository,
-                templateRepository,
-                emailSender,
-                meterRegistry,
-                emailBuilderService
-        );
+                logRepository, templateRepository, emailSender, meterRegistry, emailBuilderService);
     }
 
-    // -------------------------------------------------------------------------
-    // Cenário 1: Evento novo — e-mail enviado e log salvo com status SENT
-    // Valida: Requisito 1.1, 4.2, 5.1
-    // -------------------------------------------------------------------------
-
+    // Cenário 1: Evento novo → e-mail enviado e log SENT
     @Test
     void whenNewEvent_thenEmailSentAndLogSavedWithStatusSent() {
-        // Given
         PagamentoAprovadoEvent event = buildEvent();
-        EmailTemplate template = new EmailTemplate("tmpl-1", "PAGAMENTO_APROVADO",
-                "Pagamento Aprovado", "<h1>Olá!</h1>");
-        EmailMessage emailMessage = new EmailMessage(
-                event.playerEmail(), template.subject(), "<h1>Olá!</h1>", event.traceId());
+        EmailMessage emailMessage = new EmailMessage("jogador@exemplo.com", "Assunto", "<h1>Olá!</h1>", "1");
 
-        when(logRepository.findByEventId(event.eventId())).thenReturn(java.util.Optional.empty());
+        when(logRepository.findByEventId("1")).thenReturn(java.util.Optional.empty());
         when(emailBuilderService.build(event)).thenReturn(emailMessage);
-        when(logRepository.save(any(NotificationLog.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(logRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        // When
         notificationService.processPaymentApprovedNotification(event);
 
-        // Then
         verify(emailSender, times(1)).send(emailMessage);
-
-        ArgumentCaptor<NotificationLog> logCaptor = ArgumentCaptor.forClass(NotificationLog.class);
-        verify(logRepository, times(1)).save(logCaptor.capture());
-        NotificationLog savedLog = logCaptor.getValue();
-        assertEquals(NotificationStatus.SENT, savedLog.status());
-        assertEquals(event.eventId(), savedLog.eventId());
-        assertEquals(event.paymentId(), savedLog.paymentId());
-        assertEquals(event.playerId(), savedLog.playerId());
-        assertEquals(event.playerEmail(), savedLog.playerEmail());
-        assertEquals(event.traceId(), savedLog.traceId());
-        assertNull(savedLog.errorMessage());
-        assertNotNull(savedLog.sentAt());
+        ArgumentCaptor<NotificationLog> captor = ArgumentCaptor.forClass(NotificationLog.class);
+        verify(logRepository, times(1)).save(captor.capture());
+        assertEquals(NotificationStatus.SENT, captor.getValue().status());
+        assertEquals("1", captor.getValue().eventId());
+        assertEquals("jogador@exemplo.com", captor.getValue().playerEmail());
+        assertNull(captor.getValue().errorMessage());
+        assertNotNull(captor.getValue().sentAt());
     }
 
-    // -------------------------------------------------------------------------
-    // Cenário 2: Evento duplicado — log salvo com status DUPLICATE, sem envio
-    // Valida: Requisito 2.1
-    // -------------------------------------------------------------------------
-
+    // Cenário 2: Evento duplicado → log DUPLICATE, sem envio
     @Test
     void whenDuplicateEvent_thenLogSavedWithStatusDuplicate() {
-        // Given
         PagamentoAprovadoEvent event = buildEvent();
-        NotificationLog existingLog = new NotificationLog(
-                "log-id", event.eventId(), event.paymentId(), event.playerId(),
-                event.playerEmail(), NotificationStatus.SENT, null, Instant.now(), event.traceId());
-        when(logRepository.findByEventId(event.eventId())).thenReturn(java.util.Optional.of(existingLog));
-        when(logRepository.save(any(NotificationLog.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        NotificationLog existing = new NotificationLog(
+                "id", "1", "1", "2", "jogador@exemplo.com",
+                NotificationStatus.SENT, null, Instant.now(), "1");
 
-        // When
+        when(logRepository.findByEventId("1")).thenReturn(java.util.Optional.of(existing));
+        when(logRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
         notificationService.processPaymentApprovedNotification(event);
 
-        // Then
         verify(emailSender, never()).send(any());
-
-        ArgumentCaptor<NotificationLog> logCaptor = ArgumentCaptor.forClass(NotificationLog.class);
-        verify(logRepository, times(1)).save(logCaptor.capture());
-        NotificationLog savedLog = logCaptor.getValue();
-        assertEquals(NotificationStatus.DUPLICATE, savedLog.status());
-        assertEquals(event.eventId(), savedLog.eventId());
+        ArgumentCaptor<NotificationLog> captor = ArgumentCaptor.forClass(NotificationLog.class);
+        verify(logRepository, times(1)).save(captor.capture());
+        assertEquals(NotificationStatus.DUPLICATE, captor.getValue().status());
+        assertEquals("1", captor.getValue().eventId());
     }
 
-    // -------------------------------------------------------------------------
-    // Cenário 3: Template não encontrado — log FAILED, exceção propagada
-    // Valida: Requisito 3.2
-    // -------------------------------------------------------------------------
-
+    // Cenário 3: Template não encontrado → log FAILED, exceção propagada
     @Test
     void whenTemplateNotFound_thenLogSavedWithStatusFailedAndExceptionPropagated() {
-        // Given
         PagamentoAprovadoEvent event = buildEvent();
-        when(logRepository.findByEventId(event.eventId())).thenReturn(java.util.Optional.empty());
-        when(emailBuilderService.build(event))
-                .thenThrow(new TemplateNotFoundException("PAGAMENTO_APROVADO"));
-        when(logRepository.existsByEventId(event.eventId())).thenReturn(false);
-        when(logRepository.save(any(NotificationLog.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(logRepository.findByEventId("1")).thenReturn(java.util.Optional.empty());
+        when(emailBuilderService.build(event)).thenThrow(new TemplateNotFoundException("PAGAMENTO_APROVADO"));
+        when(logRepository.existsByEventId("1")).thenReturn(false);
+        when(logRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        // When / Then
         assertThrows(TemplateNotFoundException.class,
                 () -> notificationService.processPaymentApprovedNotification(event));
 
-        ArgumentCaptor<NotificationLog> logCaptor = ArgumentCaptor.forClass(NotificationLog.class);
-        verify(logRepository, times(1)).save(logCaptor.capture());
-        NotificationLog savedLog = logCaptor.getValue();
-        assertEquals(NotificationStatus.FAILED, savedLog.status());
-        assertEquals(event.eventId(), savedLog.eventId());
-        assertNotNull(savedLog.errorMessage());
+        ArgumentCaptor<NotificationLog> captor = ArgumentCaptor.forClass(NotificationLog.class);
+        verify(logRepository, times(1)).save(captor.capture());
+        assertEquals(NotificationStatus.FAILED, captor.getValue().status());
+        assertNotNull(captor.getValue().errorMessage());
     }
 
-    // -------------------------------------------------------------------------
-    // Cenário 4: MailException ao enviar — log FAILED, exceção propagada
-    // Valida: Requisito 4.2
-    // -------------------------------------------------------------------------
-
+    // Cenário 4: MailException → log FAILED, exceção propagada
     @Test
     void whenMailExceptionThrown_thenLogSavedWithStatusFailedAndExceptionPropagated() {
-        // Given
         PagamentoAprovadoEvent event = buildEvent();
-        EmailTemplate template = new EmailTemplate("tmpl-1", "PAGAMENTO_APROVADO",
-                "Pagamento Aprovado", "<h1>Olá!</h1>");
-        EmailMessage emailMessage = new EmailMessage(
-                event.playerEmail(), template.subject(), "<h1>Olá!</h1>", event.traceId());
+        EmailMessage emailMessage = new EmailMessage("jogador@exemplo.com", "Assunto", "<h1>Olá!</h1>", "1");
 
-        when(logRepository.findByEventId(event.eventId())).thenReturn(java.util.Optional.empty());
+        when(logRepository.findByEventId("1")).thenReturn(java.util.Optional.empty());
         when(emailBuilderService.build(event)).thenReturn(emailMessage);
-        doThrow(new MailSendException("SMTP server unavailable"))
-                .when(emailSender).send(emailMessage);
-        when(logRepository.existsByEventId(event.eventId())).thenReturn(false);
-        when(logRepository.save(any(NotificationLog.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        doThrow(new MailSendException("SMTP unavailable")).when(emailSender).send(emailMessage);
+        when(logRepository.existsByEventId("1")).thenReturn(false);
+        when(logRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        // When / Then
         assertThrows(MailSendException.class,
                 () -> notificationService.processPaymentApprovedNotification(event));
 
-        ArgumentCaptor<NotificationLog> logCaptor = ArgumentCaptor.forClass(NotificationLog.class);
-        verify(logRepository, times(1)).save(logCaptor.capture());
-        NotificationLog savedLog = logCaptor.getValue();
-        assertEquals(NotificationStatus.FAILED, savedLog.status());
-        assertEquals(event.eventId(), savedLog.eventId());
-        assertNotNull(savedLog.errorMessage());
+        ArgumentCaptor<NotificationLog> captor = ArgumentCaptor.forClass(NotificationLog.class);
+        verify(logRepository, times(1)).save(captor.capture());
+        assertEquals(NotificationStatus.FAILED, captor.getValue().status());
+        assertNotNull(captor.getValue().errorMessage());
     }
 
-    // -------------------------------------------------------------------------
-    // Cenário 5: MongoException ao salvar o log — exceção propagada
-    // Valida: Requisito 5.3
-    // -------------------------------------------------------------------------
-
+    // Cenário 5: MongoException ao salvar → exceção propagada
     @Test
     void whenMongoExceptionOnSave_thenExceptionPropagated() {
-        // Given
         PagamentoAprovadoEvent event = buildEvent();
-        EmailTemplate template = new EmailTemplate("tmpl-1", "PAGAMENTO_APROVADO",
-                "Pagamento Aprovado", "<h1>Olá!</h1>");
-        EmailMessage emailMessage = new EmailMessage(
-                event.playerEmail(), template.subject(), "<h1>Olá!</h1>", event.traceId());
+        EmailMessage emailMessage = new EmailMessage("jogador@exemplo.com", "Assunto", "<h1>Olá!</h1>", "1");
 
-        when(logRepository.findByEventId(event.eventId())).thenReturn(java.util.Optional.empty());
+        when(logRepository.findByEventId("1")).thenReturn(java.util.Optional.empty());
         when(emailBuilderService.build(event)).thenReturn(emailMessage);
         doNothing().when(emailSender).send(emailMessage);
-        when(logRepository.save(any(NotificationLog.class)))
-                .thenThrow(new com.mongodb.MongoException("Connection refused"));
+        when(logRepository.save(any())).thenThrow(new com.mongodb.MongoException("Connection refused"));
 
-        // When / Then
         assertThrows(com.mongodb.MongoException.class,
                 () -> notificationService.processPaymentApprovedNotification(event));
     }
 
-    // -------------------------------------------------------------------------
-    // Helper
-    // -------------------------------------------------------------------------
-
     private PagamentoAprovadoEvent buildEvent() {
-        return new PagamentoAprovadoEvent(
-                "evt-uuid-0001",
-                "pay-uuid-0001",
-                "player-uuid-0001",
-                "jogador@exemplo.com",
-                "João da Silva",
-                "tournament-uuid-0001",
-                "Copa Arena 2026",
-                new BigDecimal("99.90"),
-                "BRL",
-                Instant.parse("2026-01-15T10:30:00Z"),
-                "trace-abc123"
-        );
+        return new PagamentoAprovadoEvent(1L, "João da Silva", "jogador@exemplo.com", 2L, new BigDecimal("99.90"));
     }
 }

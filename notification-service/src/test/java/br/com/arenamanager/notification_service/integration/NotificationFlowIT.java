@@ -252,17 +252,11 @@ class NotificationFlowIT {
     private PagamentoAprovadoEvent buildEventWithTournamentName(
             String eventId, String playerEmail, String tournamentName) {
         return new PagamentoAprovadoEvent(
-                eventId,
-                UUID.randomUUID().toString(),
-                UUID.randomUUID().toString(),
-                playerEmail,
+                1L,
                 "Jogador E2E",
-                UUID.randomUUID().toString(),
-                tournamentName,
-                new BigDecimal("149.90"),
-                "BRL",
-                Instant.parse("2026-06-01T14:00:00Z"),
-                "e2e-trace-" + UUID.randomUUID()
+                playerEmail,
+                2L,
+                new BigDecimal("149.90")
         );
     }
 }

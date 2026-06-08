@@ -1,18 +1,15 @@
 package br.com.arenamanager.notification_service.infrastructure.kafka.event;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 
+/**
+ * Evento publicado pelo payment-service no tópico {@code pagamentos-aprovados}.
+ * Os campos seguem o contrato definido pelo payment-service.
+ */
 public record PagamentoAprovadoEvent(
-        String eventId,
-        String paymentId,
-        String playerId,
-        String playerEmail,
-        String playerName,
-        String tournamentId,
-        String tournamentName,
-        BigDecimal amount,
-        String currency,
-        Instant approvedAt,
-        String traceId
+        Long pagamentoId,
+        String nomeJogador,
+        String emailJogador,
+        Long torneioId,
+        BigDecimal valor
 ) {}

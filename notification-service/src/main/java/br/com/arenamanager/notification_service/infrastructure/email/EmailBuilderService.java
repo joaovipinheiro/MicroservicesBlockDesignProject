@@ -8,8 +8,6 @@ import br.com.arenamanager.notification_service.infrastructure.kafka.event.Pagam
 import org.springframework.stereotype.Component;
 
 import java.math.RoundingMode;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 
 /**
  * Constrói o {@link EmailMessage} a partir de um {@link PagamentoAprovadoEvent}
@@ -21,8 +19,6 @@ import java.time.format.DateTimeFormatter;
 public class EmailBuilderService {
 
     private static final String TEMPLATE_TYPE = "PAGAMENTO_APROVADO";
-    private static final DateTimeFormatter DATE_FMT =
-            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm").withZone(ZoneOffset.UTC);
 
     private final EmailTemplateRepository templateRepository;
 
@@ -44,23 +40,21 @@ public class EmailBuilderService {
         String body = interpolate(template.bodyHtml(), event);
         String subject = interpolate(template.subject(), event);
 
-        return new EmailMessage(event.playerEmail(), subject, body, event.traceId());
+        return new EmailMessage(event.emailJogador(), subject, body,
+                String.valueOf(event.pagamentoId()));
     }
 
     private String interpolate(String template, PagamentoAprovadoEvent event) {
-        String amount = event.amount() != null
-                ? event.amount().setScale(2, RoundingMode.HALF_UP).toPlainString()
-                : "";
-        String approvedAt = event.approvedAt() != null
-                ? DATE_FMT.format(event.approvedAt())
+        String amount = event.valor() != null
+                ? event.valor().setScale(2, RoundingMode.HALF_UP).toPlainString()
                 : "";
 
         return template
-                .replace("{{playerName}}", nvl(event.playerName()))
-                .replace("{{tournamentName}}", nvl(event.tournamentName()))
+                .replace("{{playerName}}", nvl(event.nomeJogador()))
+                .replace("{{tournamentName}}", nvl(String.valueOf(event.torneioId())))
                 .replace("{{amount}}", amount)
-                .replace("{{currency}}", nvl(event.currency()))
-                .replace("{{approvedAt}}", approvedAt);
+                .replace("{{currency}}", "BRL")
+                .replace("{{approvedAt}}", "");
     }
 
     private String nvl(String value) {
