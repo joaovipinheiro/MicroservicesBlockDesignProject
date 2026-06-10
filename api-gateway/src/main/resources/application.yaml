@@ -28,6 +28,25 @@ spring:
           predicates:
             - Path=/tournament/**
 
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/pagamentos/**
+          filters:
+            - StripPrefix=1
+
+        - id: analytics-service
+          uri: lb://analytics-service
+          predicates:
+            - Path=/api/analytics/**
+
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - StripPrefix=1
+
 eureka:
   client:
     service-url:
