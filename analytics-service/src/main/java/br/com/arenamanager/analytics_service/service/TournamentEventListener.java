@@ -1,25 +1,30 @@
 package br.com.arenamanager.analytics_service.service;
 
-import br.com.arenamanager.analytics_service.dto.MatchHistoryRequest;
+import br.com.arenamanager.analytics_service.dto.TournamentEventDTO;
+import br.com.arenamanager.analytics_service.model.MatchHistory;
+import br.com.arenamanager.analytics_service.repository.MatchHistoryRepository;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 @Service
 public class TournamentEventListener {
 
-    private final AnalyticsService analyticsService;
+    private final MatchHistoryRepository repository;
 
-    public TournamentEventListener(AnalyticsService analyticsService) {
-        this.analyticsService = analyticsService;
+    public TournamentEventListener(MatchHistoryRepository repository) {
+        this.repository = repository;
     }
 
-    @KafkaListener(topics = "tournament-created", groupId = "analytics-group")
-    public void consumirEventoTorneio(MatchHistoryRequest dadosDoTorneio) {
-        try {
-            System.out.println("Evento de torneio recebido via Kafka: " + dadosDoTorneio.getNome());
-            analyticsService.processarESalvarPartida(dadosDoTorneio);
-        } catch (Exception e) {
-            System.err.println("Erro ao processar evento do Kafka: " + e.getMessage());
-        }
+    @KafkaListener(topics = "tournament-created", groupId = "analytics-group-v2")
+    public void consumirEvento(TournamentEventDTO evento) {
+
+        MatchHistory history = new MatchHistory();
+        history.setIdTorneio(evento.id());
+        history.setNome(evento.nome());
+        history.setFormato(evento.formato());
+
+        repository.save(history); // Salva no Elasticsearch!
+
+        System.out.println("Torneio processado no Analytics! ID: " + evento.id());
     }
 }

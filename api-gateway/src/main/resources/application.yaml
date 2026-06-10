@@ -26,14 +26,12 @@ spring:
         - id: tournament-service
           uri: lb://tournament-service
           predicates:
-            - Path=/tournament/**
+            - Path=/api/tournaments/**
 
         - id: payment-service
           uri: lb://payment-service
           predicates:
             - Path=/api/pagamentos/**
-          filters:
-            - StripPrefix=1
 
         - id: analytics-service
           uri: lb://analytics-service
@@ -44,8 +42,8 @@ spring:
           uri: lb://notification-service
           predicates:
             - Path=/api/notifications/**
-          filters:
-            - StripPrefix=1
+
+
 
 eureka:
   client:

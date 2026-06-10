@@ -6,8 +6,8 @@ import br.com.arenamanager.payment_service.dto.EventoPagamentoAprovado;
 import br.com.arenamanager.payment_service.model.Pagamento;
 import br.com.arenamanager.payment_service.model.StatusPagamento;
 import br.com.arenamanager.payment_service.repository.PagamentoRepository;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 
@@ -16,18 +16,17 @@ public class PagamentoService {
 
     private final PagamentoRepository pagamentoRepository;
     private final PlayerClient playerClient;
-
-    // CORREÇÃO AQUI: Mudamos para <Object, Object> para bater com o padrão do Spring Boot
-    private final KafkaTemplate<Object, Object> kafkaTemplate;
+    private final PagamentoPublisherService pagamentoPublisherService;
 
     public PagamentoService(PagamentoRepository pagamentoRepository,
                             PlayerClient playerClient,
-                            KafkaTemplate<Object, Object> kafkaTemplate) {
+                            PagamentoPublisherService pagamentoPublisherService) {
         this.pagamentoRepository = pagamentoRepository;
         this.playerClient = playerClient;
-        this.kafkaTemplate = kafkaTemplate;
+        this.pagamentoPublisherService = pagamentoPublisherService;
     }
 
+    @Transactional
     public Pagamento criarPagamento(Long usuarioId, Long torneioId, BigDecimal valor) {
         if (valor == null || valor.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("O valor do pagamento deve ser maior que zero!");
@@ -35,11 +34,12 @@ public class PagamentoService {
 
         Pagamento pagamento = new Pagamento(usuarioId, torneioId, valor);
         pagamento.setStatus(StatusPagamento.APROVADO);
-
         pagamento = pagamentoRepository.save(pagamento);
 
+        // Comunicação síncrona com Player Service para obter os dados do jogador
         PlayerDTO jogador = playerClient.obterJogadorPorId(usuarioId);
 
+        // Criação do payload limpo para o Kafka
         EventoPagamentoAprovado evento = new EventoPagamentoAprovado(
                 pagamento.getId(),
                 jogador.nome(),
@@ -48,10 +48,7 @@ public class PagamentoService {
                 valor
         );
 
-        // O envio continua funcionando perfeitamente
-        kafkaTemplate.send("pagamentos-aprovados", evento);
-
-        System.out.println("Pagamento salvo e evento completo enviado ao Kafka!");
+        pagamentoPublisherService.publicarPagamentoAprovado(evento);
 
         return pagamento;
     }
