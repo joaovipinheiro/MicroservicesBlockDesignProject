@@ -24,6 +24,13 @@
         <module name="player-service" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="analytics-service" target="17" />
+      <module name="api-gateway" target="21" />
+      <module name="notification-service" target="17" />
+      <module name="payment-service" target="17" />
+      <module name="player-service" target="17" />
+    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
