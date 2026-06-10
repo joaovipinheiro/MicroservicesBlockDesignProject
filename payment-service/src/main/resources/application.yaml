@@ -1,14 +1,16 @@
 server:
-  port: 8084 # Porta corrigida para não conflitar com o Player
+  port: 8084
 
 spring:
   application:
     name: payment-service
+
   datasource:
     url: jdbc:postgresql://localhost:5432/arenamanager?currentSchema=payment
     username: root
     password: root
     driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -17,14 +19,19 @@ spring:
       hibernate:
         format_sql: true
         default_schema: payment
-        hbm2ddl.create_namespaces: true # Salva do erro de schema inexistente
+        hbm2ddl.create_namespaces: true
+
   kafka:
     bootstrap-servers: localhost:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false # <--- GARANTE A INTEGRAÇÃO KAFKA PERFEITA
 
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true

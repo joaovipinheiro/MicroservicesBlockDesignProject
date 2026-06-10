@@ -26,7 +26,12 @@ spring:
         - id: tournament-service
           uri: lb://tournament-service
           predicates:
-            - Path=/tournament/**
+            - Path=/api/tournaments/**
+
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/pagamentos/**
 
 eureka:
   client:
