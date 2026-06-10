@@ -4,11 +4,10 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-@FeignClient(name = "player-service", url = "http://localhost:8082")
+@FeignClient(name = "player-service")
 public interface PlayerClient {
 
-    @GetMapping("/players/{id}")
+    @GetMapping("/api/players/{id}")
     PlayerDTO obterJogadorPorId(@PathVariable("id") Long id);
-}
 
-record PlayerDTO(Long id, String nome, String email) {}
+}
