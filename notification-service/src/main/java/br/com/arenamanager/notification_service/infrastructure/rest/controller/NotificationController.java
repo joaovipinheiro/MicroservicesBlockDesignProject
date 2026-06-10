@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  * <p>Valida: Requisitos 7.1, 7.2, 7.3, 7.4, 7.5</p>
  */
 @RestController
-@RequestMapping("/notifications")
+@RequestMapping("/api/notifications")
 public class NotificationController {
 
     /**
