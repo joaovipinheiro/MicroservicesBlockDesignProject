@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/tournament")
+@RequestMapping("/api/tournaments")
 public class TournamentController {
 
     private static final Logger log = LoggerFactory.getLogger(TournamentController.class);
@@ -80,5 +80,11 @@ public class TournamentController {
     private void setupMdc(String correlationId) {
         // Se o caller não enviou correlationId, gera um novo para rastrear internamente
         MDC.put("correlationId", correlationId != null ? correlationId : UUID.randomUUID().toString());
+    }
+
+    @PatchMapping("/{id}/abrir-inscricoes")
+    public ResponseEntity<TournamentResponse> abrirInscricoes(@PathVariable Long id) {
+        TournamentResponse response = tournamentService.abrirInscricoes(id);
+        return ResponseEntity.ok(response);
     }
 }

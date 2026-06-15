@@ -12,29 +12,38 @@ spring:
           enabled: true
           lower-case-service-id: true
 
-      default-filters:
-        - name: AddRequestHeader
-          args:
-            name: X-Correlation-ID
-            value: "#{T(java.util.UUID).randomUUID().toString()}"
-
       routes:
         - id: player-service
           uri: lb://player-service
           predicates:
             - Path=/api/players/**
 
-        - id: tournament-service
-          uri: lb://tournament-service
-          predicates:
-            - Path=/api/tournaments/**
-          filters:
-            - StripPrefix=1
-
         - id: registration-service
           uri: lb://registration-service
           predicates:
             - Path=/api/registrations/**
+
+        - id: tournament-service
+          uri: lb://tournament-service
+          predicates:
+            - Path=/api/tournaments/**
+
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/pagamentos/**
+
+        - id: analytics-service
+          uri: lb://analytics-service
+          predicates:
+            - Path=/api/analytics/**
+
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/notifications/**
+
+
 
 eureka:
   client:

@@ -14,4 +14,4 @@ eureka:
     service-url:
       defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
   server:
-    wait-time-in-ms-when-sync-empty: 0  # Sem delay na inicialização em dev
+    wait-time-in-ms-when-sync-empty: 0

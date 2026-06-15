@@ -1,16 +1,24 @@
 server:
   port: 8086
+
 spring:
-  spring:
-    kafka:
-      bootstrap-servers: localhost:9092
-      consumer:
-        group-id: analytics-group
-        auto-offset-reset: earliest
-        key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-        value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-        properties:
-          spring.json.trusted.packages: "*"
+  application:
+    name: analytics-service
+
+  elasticsearch:
+    uris: http://localhost:9200
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: analytics-group-v2 # Mudamos para v2 para ignorar as mensagens que falharam antes
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.use.type.headers: false # Ignora a origem da classe
+        spring.json.value.default.type: br.com.arenamanager.analytics_service.dto.TournamentEventDTO # Usa o nosso novo molde
 
 eureka:
   client:
