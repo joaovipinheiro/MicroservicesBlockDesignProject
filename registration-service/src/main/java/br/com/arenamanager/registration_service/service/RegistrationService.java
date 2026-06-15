@@ -14,6 +14,7 @@ import br.com.arenamanager.registration_service.exception.ResourceNotFoundExcept
 import br.com.arenamanager.registration_service.repository.RegistrationRepository;
 import feign.FeignException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ public class RegistrationService {
     private final PaymentClient paymentClient;
     private final PlayerClient playerClient;
     private final TournamentClient tournamentClient;
+    private final MeterRegistry meterRegistry;
 
     @CircuitBreaker(name = "payment-service", fallbackMethod = "fallbackRegistration")
     public RegistrationResponse createRegistration(RegistrationRequest request) {
@@ -56,6 +58,7 @@ public class RegistrationService {
         saved.setStatus(RegistrationStatus.CONFIRMADO);
         registrationRepository.save(saved);
 
+        meterRegistry.counter("registrations.confirmed.total", "service", "registration-service").increment();
         log.info("Inscricao {} confirmada com pagamento.", saved.getId());
         return toResponse(saved);
     }
@@ -71,6 +74,8 @@ public class RegistrationService {
         registration.setStatus(RegistrationStatus.AGUARDANDO_PAGAMENTO);
 
         Registration saved = registrationRepository.save(registration);
+
+        meterRegistry.counter("registrations.pending.total", "service", "registration-service").increment();
         return toResponse(saved);
     }
 
@@ -110,7 +115,11 @@ public class RegistrationService {
         }
 
         registration.setStatus(RegistrationStatus.CANCELADO);
-        return toResponse(registrationRepository.save(registration));
+        Registration saved = registrationRepository.save(registration);
+
+        meterRegistry.counter("registrations.cancelled.total", "service", "registration-service").increment();
+        log.info("Inscricao {} cancelada.", id);
+        return toResponse(saved);
     }
 
     private void validateNoDuplicate(Long playerId, Long tournamentId) {

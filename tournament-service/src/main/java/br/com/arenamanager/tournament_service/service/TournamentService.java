@@ -8,7 +8,10 @@ import br.com.arenamanager.tournament_service.domain.model.Tournament;
 import br.com.arenamanager.tournament_service.domain.model.TournamentStatus;
 import br.com.arenamanager.tournament_service.producer.TournamentProducer;
 import br.com.arenamanager.tournament_service.repository.TournamentRepository;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -18,22 +21,32 @@ import java.util.Optional;
 
 @Service
 public class TournamentService {
+
+    private static final Logger log = LoggerFactory.getLogger(TournamentService.class);
+
     private final TournamentRepository tournamentRepository;
     private final TournamentProducer tournamentProducer;
+    private final MeterRegistry meterRegistry;
 
-    public TournamentService(TournamentRepository tournamentRepository, TournamentProducer tournamentProducer) {
+    public TournamentService(TournamentRepository tournamentRepository,
+                             TournamentProducer tournamentProducer,
+                             MeterRegistry meterRegistry) {
         this.tournamentRepository = tournamentRepository;
         this.tournamentProducer = tournamentProducer;
+        this.meterRegistry = meterRegistry;
     }
 
     @Transactional
-    public TournamentResponse createTournament (TournamentRequest request){
+    public TournamentResponse createTournament(TournamentRequest request) {
+        log.info("Criando torneio: nome={}", request.getNome());
+
         Tournament tournament = new Tournament();
         tournament.setNome(request.getNome());
         tournament.setDescricao(request.getDescricao());
         tournament.setData_inicio(request.getData_inicio());
         tournament.setData_fim(request.getData_fim());
         tournament.setStatus(TournamentStatus.CRIADO);
+
         if (request.getRegras() != null) {
             var regrasEntity = new RuleSet();
             regrasEntity.setFormato(request.getRegras().getFormato());
@@ -43,6 +56,14 @@ public class TournamentService {
         }
 
         Tournament savedTournament = tournamentRepository.save(tournament);
+
+        // Métrica de negócio: conta torneios por status
+        meterRegistry.counter("tournaments.status.total",
+                "status", savedTournament.getStatus().name(),
+                "service", "tournament-service"
+        ).increment();
+
+        log.info("Torneio criado: id={}, status={}", savedTournament.getId(), savedTournament.getStatus());
 
         String formatoTorneio = (savedTournament.getRegras() != null) ? savedTournament.getRegras().getFormato() : "N/A";
         TournamentCreatedEvent event = new TournamentCreatedEvent(
