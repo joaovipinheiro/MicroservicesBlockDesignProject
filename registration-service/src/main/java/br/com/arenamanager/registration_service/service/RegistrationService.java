@@ -17,6 +17,7 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -33,7 +34,11 @@ public class RegistrationService {
     private final MeterRegistry meterRegistry;
 
     @CircuitBreaker(name = "payment-service", fallbackMethod = "fallbackRegistration")
-    public RegistrationResponse createRegistration(RegistrationRequest request) {
+    public RegistrationResponse createRegistration(RegistrationRequest request, String correlationId) {
+        MDC.put("correlationId", correlationId);
+        log.info("Criando inscricao: playerId={}, tournamentId={}, correlationId={}",
+                request.getPlayerId(), request.getTournamentId(), correlationId);
+
         validatePlayer(request.getPlayerId());
         validateTournament(request.getTournamentId());
         validateNoDuplicate(request.getPlayerId(), request.getTournamentId());
@@ -47,6 +52,9 @@ public class RegistrationService {
 
         Registration saved = registrationRepository.save(registration);
 
+        log.info("Chamando payment-service: registrationId={}, valor={}, correlationId={}",
+                saved.getId(), saved.getValor(), correlationId);
+
         PaymentRequest paymentRequest = new PaymentRequest(
                 saved.getPlayerId(),
                 saved.getTournamentId(),
@@ -59,12 +67,13 @@ public class RegistrationService {
         registrationRepository.save(saved);
 
         meterRegistry.counter("registrations.confirmed.total", "service", "registration-service").increment();
-        log.info("Inscricao {} confirmada com pagamento.", saved.getId());
+        log.info("Inscricao {} confirmada com pagamento, correlationId={}.", saved.getId(), correlationId);
         return toResponse(saved);
     }
 
-    public RegistrationResponse fallbackRegistration(RegistrationRequest request, Throwable ex) {
-        log.warn("[CIRCUIT BREAKER] payment-service indisponivel. Motivo: {}. Inscricao salva com status AGUARDANDO_PAGAMENTO.", ex.getMessage());
+    public RegistrationResponse fallbackRegistration(RegistrationRequest request, String correlationId, Throwable ex) {
+        log.warn("[CIRCUIT BREAKER] payment-service indisponivel. correlationId={}. Motivo: {}. Inscricao salva com status AGUARDANDO_PAGAMENTO.",
+                correlationId, ex.getMessage());
 
         Registration registration = new Registration();
         registration.setPlayerId(request.getPlayerId());

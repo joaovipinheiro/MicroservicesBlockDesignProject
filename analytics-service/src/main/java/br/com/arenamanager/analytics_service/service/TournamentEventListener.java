@@ -3,11 +3,21 @@ package br.com.arenamanager.analytics_service.service;
 import br.com.arenamanager.analytics_service.dto.TournamentEventDTO;
 import br.com.arenamanager.analytics_service.model.MatchHistory;
 import br.com.arenamanager.analytics_service.repository.MatchHistoryRepository;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.header.Header;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
+
 @Service
 public class TournamentEventListener {
+
+    private static final Logger log = LoggerFactory.getLogger(TournamentEventListener.class);
+    private static final String HEADER_CORRELATION = "X-Correlation-ID";
 
     private final MatchHistoryRepository repository;
 
@@ -16,15 +26,28 @@ public class TournamentEventListener {
     }
 
     @KafkaListener(topics = "tournament-created", groupId = "analytics-group-v2")
-    public void consumirEvento(TournamentEventDTO evento) {
+    public void consumirEvento(ConsumerRecord<String, TournamentEventDTO> record) {
+        TournamentEventDTO evento = record.value();
 
-        MatchHistory history = new MatchHistory();
-        history.setIdTorneio(evento.id());
-        history.setNome(evento.nome());
-        history.setFormato(evento.formato());
+        Header correlationHeader = record.headers().lastHeader(HEADER_CORRELATION);
+        if (correlationHeader != null) {
+            MDC.put("correlationId", new String(correlationHeader.value(), StandardCharsets.UTF_8));
+        }
 
-        repository.save(history); // Salva no Elasticsearch!
+        try {
+            log.info("Evento TournamentCreated recebido do Kafka: tournamentId={}, nome={}, correlationId={}",
+                    evento.id(), evento.nome(), MDC.get("correlationId"));
 
-        System.out.println("Torneio processado no Analytics! ID: " + evento.id());
+            MatchHistory history = new MatchHistory();
+            history.setIdTorneio(evento.id());
+            history.setNome(evento.nome());
+            history.setFormato(evento.formato());
+
+            repository.save(history);
+
+            log.info("Torneio salvo no Elasticsearch: tournamentId={}, nome={}", evento.id(), evento.nome());
+        } finally {
+            MDC.clear();
+        }
     }
 }
