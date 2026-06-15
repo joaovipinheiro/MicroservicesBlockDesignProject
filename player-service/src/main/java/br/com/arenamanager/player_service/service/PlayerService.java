@@ -8,7 +8,9 @@ import br.com.arenamanager.player_service.exception.BusinessException;
 import br.com.arenamanager.player_service.exception.ResourceNotFoundException;
 import br.com.arenamanager.player_service.mapper.PlayerMapper;
 import br.com.arenamanager.player_service.repository.PlayerRepository;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,10 +18,12 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PlayerService {
 
     private final PlayerRepository repository;
     private final PlayerMapper mapper;
+    private final MeterRegistry meterRegistry;
 
     @Transactional
     public PlayerResponseDTO createPlayer(PlayerRequestDTO dto) {
@@ -27,6 +31,9 @@ public class PlayerService {
 
         Player player = mapper.toEntity(dto);
         player = repository.save(player);
+
+        meterRegistry.counter("players.created.total", "service", "player-service").increment();
+        log.info("Jogador criado: id={}, email={}", player.getId(), player.getEmail());
 
         return mapper.toResponseDTO(player);
     }
@@ -53,6 +60,9 @@ public class PlayerService {
         mapper.updateEntityFromDto(dto, player);
         player = repository.save(player);
 
+        meterRegistry.counter("players.updated.total", "service", "player-service").increment();
+        log.info("Jogador atualizado: id={}", player.getId());
+
         return mapper.toResponseDTO(player);
     }
 
@@ -60,6 +70,9 @@ public class PlayerService {
     public void deletePlayer(Long id) {
         Player player = findEntityById(id);
         repository.delete(player);
+
+        meterRegistry.counter("players.deleted.total", "service", "player-service").increment();
+        log.info("Jogador removido: id={}", id);
     }
 
     private Player findEntityById(Long id) {
