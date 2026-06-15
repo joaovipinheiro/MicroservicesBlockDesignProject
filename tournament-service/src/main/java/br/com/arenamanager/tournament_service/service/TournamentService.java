@@ -9,7 +9,9 @@ import br.com.arenamanager.tournament_service.domain.model.TournamentStatus;
 import br.com.arenamanager.tournament_service.producer.TournamentProducer;
 import br.com.arenamanager.tournament_service.repository.TournamentRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -66,6 +68,29 @@ public class TournamentService {
 
     public Optional<Tournament> getTournamentById(Long id) {
         return tournamentRepository.findById(id);
+    }
+
+    @Transactional
+    public TournamentResponse abrirInscricoes(Long id) {
+        Tournament tournament = tournamentRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Torneio nao encontrado: " + id));
+
+        if (tournament.getStatus() != TournamentStatus.CRIADO) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Torneio nao pode ter inscricoes abertas. Status atual: " + tournament.getStatus());
+        }
+
+        tournament.setStatus(TournamentStatus.REGISTRO_ABERTO);
+        Tournament saved = tournamentRepository.save(tournament);
+
+        return new TournamentResponse(
+                saved.getId(),
+                saved.getNome(),
+                saved.getDescricao(),
+                saved.getStatus(),
+                saved.getData_inicio(),
+                saved.getData_fim()
+        );
     }
 }
 

@@ -38,4 +38,10 @@ public class TournamentController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @PatchMapping("/{id}/abrir-inscricoes")
+    public ResponseEntity<TournamentResponse> abrirInscricoes(@PathVariable Long id) {
+        TournamentResponse response = tournamentService.abrirInscricoes(id);
+        return ResponseEntity.ok(response);
+    }
 }
