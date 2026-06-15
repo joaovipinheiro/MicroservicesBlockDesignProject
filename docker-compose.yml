@@ -69,6 +69,20 @@ services:
       CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
     restart: unless-stopped
 
+  # 🖥️ Kafdrop — visualização de tópicos e mensagens Kafka
+  kafdrop:
+    image: obsidiandynamics/kafdrop:latest
+    container_name: arenamanager-kafdrop
+    ports:
+      - "9000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: "localhost:9092"
+      JVM_OPTS: "-Xms32M -Xmx64M"
+    network_mode: host
+    depends_on:
+      - kafka
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   mongo_data:

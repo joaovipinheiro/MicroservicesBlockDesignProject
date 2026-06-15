@@ -38,8 +38,10 @@ public class PagamentoAprovadoKafkaConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(PagamentoAprovadoKafkaConsumer.class);
 
-    private static final String MDC_TRACE_ID_KEY = "traceId";
-    private static final String HEADER_TRACE_ID  = "X-B3-TraceId";
+    private static final String MDC_TRACE_ID_KEY      = "traceId";
+    private static final String MDC_CORRELATION_ID_KEY = "correlationId";
+    private static final String HEADER_TRACE_ID        = "X-B3-TraceId";
+    private static final String HEADER_CORRELATION_ID  = "X-Correlation-ID";
     private static final String DLQ_COUNTER      = "notifications.dlq.total";
 
     private final ProcessPaymentNotificationUseCase notificationUseCase;
@@ -74,13 +76,15 @@ public class PagamentoAprovadoKafkaConsumer {
     )
     public void consume(ConsumerRecord<String, String> record, Acknowledgment ack) {
         propagateTraceId(record);
+        propagateCorrelationId(record);
         String traceId = MDC.get(MDC_TRACE_ID_KEY);
+        String correlationId = MDC.get(MDC_CORRELATION_ID_KEY);
 
         try {
             PagamentoAprovadoEvent event = deserialize(record.value());
 
-            log.info("Processing payment notification: pagamentoId={}, emailJogador={}, traceId={}",
-                    event.pagamentoId(), event.emailJogador(), record.offset());
+            log.info("Evento PagamentoAprovado recebido do Kafka: pagamentoId={}, emailJogador={}, correlationId={}, traceId={}",
+                    event.pagamentoId(), event.emailJogador(), correlationId, traceId);
 
             notificationUseCase.processPaymentApprovedNotification(event);
             ack.acknowledge();
@@ -95,6 +99,7 @@ public class PagamentoAprovadoKafkaConsumer {
 
         } finally {
             MDC.remove(MDC_TRACE_ID_KEY);
+            MDC.remove(MDC_CORRELATION_ID_KEY);
         }
     }
 
@@ -102,14 +107,17 @@ public class PagamentoAprovadoKafkaConsumer {
     // Helpers
     // -------------------------------------------------------------------------
 
-    /**
-     * Extracts the {@code X-B3-TraceId} header from the Kafka record and stores it in MDC.
-     */
     private void propagateTraceId(ConsumerRecord<String, String> record) {
         Header traceIdHeader = record.headers().lastHeader(HEADER_TRACE_ID);
         if (traceIdHeader != null) {
-            String traceId = new String(traceIdHeader.value(), StandardCharsets.UTF_8);
-            MDC.put(MDC_TRACE_ID_KEY, traceId);
+            MDC.put(MDC_TRACE_ID_KEY, new String(traceIdHeader.value(), StandardCharsets.UTF_8));
+        }
+    }
+
+    private void propagateCorrelationId(ConsumerRecord<String, String> record) {
+        Header correlationHeader = record.headers().lastHeader(HEADER_CORRELATION_ID);
+        if (correlationHeader != null) {
+            MDC.put(MDC_CORRELATION_ID_KEY, new String(correlationHeader.value(), StandardCharsets.UTF_8));
         }
     }
 
