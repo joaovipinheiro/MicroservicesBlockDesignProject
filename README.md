@@ -1,18 +1,40 @@
 # 🎮 ArenaManager: Plataforma de Gestão de Torneios de E-Sports
 
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-F2F4F9?style=for-the-badge&logo=spring-boot)
+![Spring Cloud](https://img.shields.io/badge/Spring_Cloud-F2F4F9?style=for-the-badge&logo=spring)
+![Kafka](https://img.shields.io/badge/Apache_Kafka-F2F4F9?style=for-the-badge&logo=apache-kafka)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-F2F4F9?style=for-the-badge&logo=postgresql)
+![MongoDB](https://img.shields.io/badge/MongoDB-F2F4F9?style=for-the-badge&logo=mongodb)
+![Docker](https://img.shields.io/badge/Docker-F2F4F9?style=for-the-badge&logo=docker)
+
 > **O Desafio:** Plataformas de E-Sports sofrem com picos massivos de tráfego durante a abertura de inscrições para torneios populares. Quedas em integrações bancárias ou lentidão na geração de relatórios não podem paralisar o sistema central.
 >
-> **A Solução:** O **ArenaManager** é uma arquitetura orientada a microsserviços construída para garantir alta disponibilidade, escalabilidade horizontal sob demanda e isolamento rigoroso de falhas, garantindo que um problema no processamento de pagamentos nunca impeça um jogador de visualizar os torneios ou acessar seu perfil.
+> **A Solução:** O **ArenaManager** é uma arquitetura orientada a microsserviços construída para garantir alta disponibilidade, escalabilidade horizontal sob demanda e isolamento rigoroso de falhas. A plataforma garante que um problema no processamento de pagamentos nunca impeça um jogador de visualizar os torneios ou acessar seu perfil.
 
 ---
 
-# 👥 1. Identificação da Equipe (Turma: 26E2_3)
+## 📚 Índice
+- [1. Identificação da Equipe](#-1-identificação-da-equipe-turma-26e2_3)
+- [2. Estrutura do Projeto](#-2-estrutura-do-projeto)
+- [3. Arquitetura da Solução e Tecnologias](#-3-arquitetura-da-solução-e-tecnologias)
+- [4. Visão Geral dos Microsserviços](#-4-visão-geral-dos-microsserviços)
+- [5. Justificativa de Persistência Poliglota (TP1)](#️-5-justificativa-de-persistência-poliglota-tp1)
+- [6. Estratégia de Resiliência: Circuit Breaker (TP1)](#️-6-estratégia-de-resiliência-circuit-breaker-tp1)
+- [7. Fluxo de Trabalho Git (Git Flow)](#-7-fluxo-de-trabalho-git-git-flow)
+- [8. Instruções de Execução e Variáveis](#-8-instruções-de-execução)
+- [9. Guia de Endpoints e Testes](#-9-guia-de-endpoints-e-testes)
+- [10. Evidências Visuais e Entregáveis](#-10-evidências-visuais-e-entregáveis)
+- [11. Roadmap](#-11-roadmap)
+
+---
+
+## 👥 1. Identificação da Equipe (Turma: 26E2_3)
 
 **Responsável pela Organização:** João Victor Martins Pinheiro
 
 | Nome | Papel Inicial | Microsserviço Sob Responsabilidade |
 | :--- | :--- | :--- |
-| **João Martins** | Responsável pelo API Gateway | `player-service` |
+| **João Martins** | Responsável pelo API Gateway e Autenticação | `player-service` / `auth-service` |
 | **Gabriel Maurity** | Responsável pelo Discovery Server | `tournament-service` |
 | **Gabriel Consentindo** | Desenvolvedor Backend | `registration-service` |
 | **Matheus Horta** | Responsável pelos Bancos de Dados | `payment-service` |
@@ -21,364 +43,305 @@
 
 ---
 
-# 🌿 2. Fluxo de Trabalho Git (Git Flow) e Branches
+## 📁 2. Estrutura do Projeto
 
-Para manter o repositório organizado, limpo e livre de conflitos destrutivos de código, a equipe adotará um padrão estrito de desenvolvimento. **É terminantemente proibido realizar commits diretos na branch `main`.**
+```text
+ArenaManager/
+├── api-gateway/          # Ponto de entrada (Spring Cloud Gateway)
+├── discovery-server/     # Service Discovery (Eureka)
+├── auth-service/         # JWT e Segurança
+├── player-service/       # Gestão de Perfis
+├── tournament-service/   # Gestão de Campeonatos
+├── registration-service/ # Processo de Inscrições
+├── payment-service/      # Pagamentos (Integração Fake)
+├── notification-service/ # Disparo de E-mails/Notificações
+├── analytics-service/    # Estatísticas (WebFlux + Elasticsearch)
+├── docker-compose.yml    # Orquestração de Infraestrutura
+└── README.md
 
-## Padrão de Nomenclatura para Branches
-
-Sempre que um integrante for iniciar o desenvolvimento de sua parte ou corrigir algo, deve criar uma ramificação (*branch*) seguindo a estrutura:
-
-```bash
-feat/nome-do-integrante-nome-do-servico
-```
-
-ou
-
-```bash
-feat/nome-do-integrante-tarefa
-```
-
-### Exemplos Práticos
-
-- Trabalho do Gabriel Maurity no Discovery/Tournament:
-```bash
-feat/gabriel-discovery
-```
-
-- Trabalho do Gabriel Consentindo no Registration:
-```bash
-feat/consentindo-registration
-```
-
-- Trabalho da Nayanda no Notification:
-```bash
-feat/nayanda-notification
-```
-
-- Trabalho do Matheus no Payment:
-```bash
-feat/horta-payment
-```
-
-- Trabalho do Rodrigo no Analytics:
-```bash
-feat/rodrigo-analytics
 ```
 
 ---
 
-## Passo a Passo para Iniciar o seu Trabalho
+## 🏗️ 3. Arquitetura da Solução e Tecnologias
 
-### 1. Abra o terminal na raiz do projeto
+O ecossistema do ArenaManager apoia-se em padrões modernos de sistemas distribuídos para suportar a nuvem, resiliência e alta escalabilidade:
 
-### 2. Certifique-se de estar na branch principal e atualizada
+```text
+       Cliente
+          │
+     API Gateway
+          │
+ ┌────────┴───────┬────────────────┐
+ │                │                │
+Auth           Player         Tournament
+ │                │                │
+Postgres       Postgres         Postgres
 
-```bash
-git checkout main
-git pull origin main
+       Registration
+          │
+  [Circuit Breaker]
+          │
+       Payment
+          │
+        Kafka
+          │
+     Notification
+ 
+      Analytics
+  (WebFlux + R2DBC)
+
 ```
 
-### 3. Crie e mude para a sua nova branch de desenvolvimento
+### 🔀 Comunicação entre Serviços
 
-```bash
-git checkout -b feat/seu-nome-seu-servico
+| Origem | Destino | Tipo de Comunicação |
+| --- | --- | --- |
+| API Gateway | Todos os Serviços | HTTP Síncrono (REST) |
+| Registration Service | Payment Service | HTTP Síncrono (OpenFeign) |
+| Payment Service | Notification Service | Assíncrono (Apache Kafka) |
+| Analytics Service | Outros | HTTP Reativo (WebClient) |
+
+### 3.1. Service Discovery & API Gateway
+
+* **Eureka Server (`discovery-server`):** Atua como um catálogo dinâmico. Quando escalamos um serviço horizontalmente, as instâncias se registram automaticamente. Nenhum serviço precisa conhecer o IP fixo do outro.
+* **Spring Cloud Gateway (`api-gateway`):** Ponto único de entrada (*Single Point of Entry*). Roteia as chamadas externas dinamicamente, centralizando CORS e segurança.
+
+### 3.2. Segurança e Autenticação (TP3)
+
+Implementamos um servidor de identidade dedicado (`auth-service`) baseado em **JWT (JSON Web Token)**.
+
+* **Rotas Públicas:** Criação de usuário, login.
+* **Rotas Protegidas:** Inscrições, pagamentos e dados de perfil exigem um token Bearer válido no *header* da requisição.
+* **Refresh Token:** Fluxo implementado para renovação segura de credenciais expiradas.
+
+**Fluxo de Autenticação:**
+
+```text
+Cliente → Login → Auth Service → Gera JWT → Cliente guarda Token
+Cliente → Request + Authorization: Bearer → Gateway → Serviços Protegidos
+
 ```
 
-### 4. Desenvolva as implementações estritamente dentro da pasta do seu microsserviço
+### 3.3. Comunicação Assíncrona com Apache Kafka (TP2)
 
-### 5. Ao concluir, faça o commit e envie para o repositório remoto
+Para reduzir o acoplamento e tolerar falhas, utilizamos mensageria para processos em background.
 
-```bash
-git add .
-git commit -m "feat: implementa funcionalidade X no servico Y"
-git push origin feat/seu-nome-seu-servico
-```
+* **Evento de Domínio:** `PagamentoAprovadoEvent`.
+* **Tópico:** `payments.approved`
+* **Fluxo:** Quando o `payment-service` (Produtor) processa uma taxa com sucesso, ele publica no tópico. O `notification-service` (Consumidor) escuta este evento e dispara o e-mail.
 
-### 6. Abra um Pull Request (PR) no GitHub
-
-As alterações devem ser revisadas antes de irem para a `main`.
-
----
-
-# 🏗️ 3. Arquitetura da Solução
-
-O ecossistema base do ArenaManager apoia-se em dois pilares fundamentais do Spring Cloud para suportar a nuvem e a escalabilidade:
-
-## 1. Service Discovery (Eureka Server)
-
-Atua como um catálogo dinâmico. Quando escalamos horizontalmente o `registration-service` para múltiplas instâncias devido a um pico de inscrições, todas se registram automaticamente no Eureka.
-
-Nenhum serviço precisa conhecer o IP fixo ou a porta física do outro em ambiente de produção.
-
-## 2. API Gateway (Spring Cloud Gateway)
-
-É o ponto único de entrada (*Single Point of Entry*) da nossa aplicação.
-
-Ele consulta o Discovery Server em tempo real para rotear as chamadas externas (`/api/*`) para a instância correta e saudável, além de centralizar:
-
-- Segurança
-- CORS
-- Tratamentos de requisições
-
----
-
-# 🧩 4. Visão Geral dos Microsserviços
-
-Para garantir que toda a equipe consiga rodar o projeto localmente sem conflitos de portas, adotamos o seguinte padrão:
-
-| Serviço | Porta Padrão | Responsabilidade Principal | Persistência / Banco de Dados | Isolamento Lógico |
-| --- | --- | --- | --- | --- |
-| `discovery-server` | `8761` | Registro e descoberta dinâmica de serviços | N/A | N/A |
-| `api-gateway` | `8080` | Roteamento dinâmico e ponto de entrada único | N/A | N/A |
-| `player-service` | `8081` | Gestão de perfis e autenticação de jogadores | PostgreSQL | Schema isolado: `players` |
-| `tournament-service` | `8082` | Criação de chaves, regras e cronogramas de jogos | PostgreSQL | Schema isolado: `tournaments` |
-| `registration-service` | `8083` | Inscrições de equipes e jogadores em torneios | PostgreSQL | Schema isolado: `registration` |
-| `payment-service` | `8084` | Processamento de taxas de inscrição e checkout | PostgreSQL | Schema isolado: `payment` |
-| `notification-service` | `8085` | Disparo de alertas, e-mails e webhooks | MongoDB | Instância NoSQL dedicada |
-| `analytics-service` | `8086` | Geração de rankings e estatísticas em tempo real | Elasticsearch | Índices isolados otimizados |
-
----
-
-# 🗄️ 5. Justificativa de Persistência Poliglota
-
-O ArenaManager foge da abordagem monolítica de “um único banco para toda a aplicação”, escolhendo a ferramenta certa para o modelo de dados de cada domínio.
-
-## Elasticsearch (`analytics-service`)
-
-Serviços de estatísticas exigem:
-
-- Agregações complexas
-- Ranking dinâmico
-- Buscas textuais rápidas
-- Alta performance em tempo real
-
-O Elasticsearch armazena documentos indexados de forma otimizada para respostas em milissegundos.
-
----
-
-## MongoDB (`notification-service`)
-
-Logs de notificações, alertas rápidos e templates de mensagens possuem estruturas altamente dinâmicas.
-
-O MongoDB gerencia documentos JSON de forma nativa e extremamente veloz.
-
----
-
-## PostgreSQL
-
-Mantido para os serviços transacionais principais:
-
-- `player-service`
-- `tournament-service`
-- `registration-service`
-- `payment-service`
-
-Garantindo:
-
-- Integridade relacional
-- Transações ACID
-- Schemas isolados
-
----
-
-# 🛡️ 6. Estratégia de Resiliência (Circuit Breaker)
-
-A comunicação síncrona entre o `registration-service` e o `payment-service` é o ponto mais crítico do sistema.
-
-Se a API de pagamentos externa apresentar lentidão extrema ou cair, as inscrições dos jogadores não podem falhar tragicamente.
-
-Implementamos uma estratégia de **Circuit Breaker com Fallback** através da biblioteca **Resilience4j**.
-
----
-
-## Regra de Negócio do Fallback
-
-Se a chamada HTTP feita pelo `registration-service` ao `payment-service`:
-
-- Estourar timeout
-- Retornar erro 5xx
-- Estiver indisponível
-
-O Circuit Breaker abrirá e desviará o fluxo instantaneamente para o método de fallback.
-
-A inscrição será salva localmente com o status:
-
-```json
-"AGUARDANDO_PAGAMENTO"
-```
-
----
-
-# 🛠️ Como Simular e Validar a Falha
-
-## 1. Suba todo o ecossistema normalmente
-
-## 2. Derrube o `payment-service`
-
-Pare exclusivamente o container/serviço da porta `8084`.
-
-## 3. Faça uma requisição POST de inscrição
-
-```http
-POST http://localhost:8080/api/registrations/
-```
-
-## 4. Resultado Esperado
-
-O gateway deve retornar:
-
-- HTTP `201` ou `202`
-- Payload contendo:
+**Exemplo de Payload no Kafka:**
 
 ```json
 {
-  "status": "AGUARDANDO_PAGAMENTO"
+  "paymentId": 15,
+  "playerId": 8,
+  "tournamentId": 105,
+  "status": "APPROVED"
 }
+
 ```
 
-O console do `registration-service` registrará o acionamento do fallback.
+### 3.4. Observabilidade (TP2)
+
+O comportamento interno do sistema é monitorado de ponta a ponta:
+
+* **Métricas:** Expostas via Spring Boot Actuator/Micrometer (`/actuator/prometheus`, `/actuator/metrics`).
+* **Logs e Correlação:** Implementação de logs estruturados utilizando *Correlation IDs*, permitindo rastrear uma requisição.
+* *Exemplo:* `INFO [payment-service, traceId=12345] Payment processado com sucesso`
+
+
+
+### 3.5. Programação Reativa (TP2)
+
+O sistema incorpora o modelo reativo utilizando **Spring WebFlux** e **Spring Data R2DBC** em rotas de alta concorrência (Analytics), garantindo I/O não bloqueante. O `WebClient` substitui chamadas síncronas pesadas nestes contextos.
+
+**Fluxo Reativo:**
+
+```text
+Cliente → Gateway → Analytics (WebFlux) → BD (R2DBC Não-Bloqueante)
+
+```
 
 ---
 
-# 🚀 7. Instruções de Execução
+## 🧩 4. Visão Geral dos Microsserviços
 
-## Pré-requisitos Obrigatórios
+Para garantir execução local sem conflitos de portas, adotamos o seguinte padrão:
 
-- Java 17
-- Apache Maven
-- Docker
-- Docker Compose
+| Serviço | Porta Padrão | Responsabilidade Principal | Persistência | Isolamento |
+| --- | --- | --- | --- | --- |
+| `discovery-server` | `8761` | Registro e descoberta dinâmica | N/A | N/A |
+| `api-gateway` | `8080` | Roteamento dinâmico e ponto de entrada único | N/A | N/A |
+| `auth-service` | `8087` | Emissão de tokens JWT e verificação de identidade | PostgreSQL | Schema: `auth` |
+| `player-service` | `8081` | Gestão de perfis e dados de jogadores | PostgreSQL | Schema: `players` |
+| `tournament-service` | `8082` | Criação de chaves, regras e cronogramas de jogos | PostgreSQL | Schema: `tournaments` |
+| `registration-service` | `8083` | Inscrições de equipes e jogadores em torneios | PostgreSQL | Schema: `registration` |
+| `payment-service` | `8084` | Processamento de taxas de inscrição e checkout | PostgreSQL | Schema: `payment` |
+| `notification-service` | `8085` | Disparo de e-mails via eventos do Kafka | MongoDB | Instância NoSQL |
+| `analytics-service` | `8086` | Geração de rankings e métricas (Reativo) | Elasticsearch | Índices otimizados |
 
 ---
 
-# Ordem Correta de Inicialização
+## 🗄️ 5. Justificativa de Persistência Poliglota (TP1)
 
-## 1. Bancos de Dados e Infraestrutura
+A arquitetura foge da abordagem monolítica, escolhendo a ferramenta certa para cada domínio:
 
+* **Elasticsearch (`analytics-service`):** Exige agregações complexas e ranking dinâmico. O Elasticsearch armazena documentos indexados para respostas textuais e matemáticas em milissegundos.
+* **MongoDB (`notification-service`):** Logs de notificações e templates de e-mail possuem estruturas dinâmicas e sem schema rígido. O MongoDB gerencia documentos JSON nativamente e com altíssima velocidade de gravação.
+* **PostgreSQL:** Mantido para os serviços transacionais principais (Players, Tournaments, Registrations, Payments, Auth), garantindo integridade relacional, transações ACID e schemas isolados logicamente.
+
+---
+
+## 🛡️ 6. Estratégia de Resiliência: Circuit Breaker (TP1)
+
+A comunicação síncrona via OpenFeign entre o `registration-service` e o `payment-service` é crítica. Se a API de pagamentos apresentar lentidão ou cair, implementamos uma estratégia de **Circuit Breaker com Fallback** (via **Resilience4j**).
+
+**Fluxo de Falha:**
+
+```text
+Registration → Tenta chamar Payment → Payment OFF/Timeout → Dispara Fallback local
+
+```
+
+**Regra de Negócio do Fallback:**
+A inscrição não será perdida; ela será salva localmente de forma assíncrona com o status `"AGUARDANDO_PAGAMENTO"`. O jogador recebe um HTTP 202 (Accepted) imediatamente.
+
+---
+
+## 🌿 7. Fluxo de Trabalho Git (Git Flow)
+
+**É terminantemente proibido realizar commits diretos na branch `main`.**
+
+Padrão para criação de *branches*: `feat/nome-servico` ou `fix/nome-tarefa`.
+
+1. `git pull origin main`
+2. `git checkout -b feat/seu-nome-seu-servico`
+3. Commit estruturado: `git commit -m "feat: implementa autenticacao JWT no auth-service"`
+4. Abra um **Pull Request (PR)** para revisão obrigatória.
+
+---
+
+## 🚀 8. Instruções de Execução e Variáveis
+
+**Pré-requisitos:** Java 17, Apache Maven, Docker e Docker Compose.
+
+### Variáveis de Ambiente Necessárias (`.env` ou `application.yaml`)
+
+Certifique-se de ter as variáveis configuradas para execução local:
+
+```env
+JWT_SECRET=sua_chave_super_secreta_aqui
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=admin
+SPRING_PROFILES_ACTIVE=dev
+KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+
+```
+
+### Ordem Correta de Inicialização
+
+**1. Infraestrutura (Bancos, Kafka, Zookeeper, etc.)**
 Na raiz do projeto:
 
 ```bash
 docker-compose up -d
+
 ```
+
+**2. Discovery Server** (Acesse `http://localhost:8761` para validar)
+**3. API Gateway** (Porta `8080`)
+**4. Microsserviços de Negócio** (`auth`, `player`, `tournament`, `registration`, `payment`, `notification`, `analytics`)
+*Aguarde cerca de 45 segundos e confirme no painel do Eureka se todos os serviços constam como `UP`.*
 
 ---
 
-## 2. Discovery Server
+## 🧪 9. Guia de Endpoints e Testes
 
-Entre na pasta `discovery-server` e execute a aplicação.
+Todas as requisições externas passam pelo API Gateway (`http://localhost:8080`).
 
-Porta:
+### 🔐 9.1. Autenticação (TP3)
 
-```txt
-8761
+**1. Login (Gera o Token JWT):**
+
+```bash
+curl -X POST http://localhost:8080/api/auth/login \
+-H "Content-Type: application/json" \
+-d '{"email": "faker@t1.gg", "password": "senha_segura"}'
+
 ```
 
-### Validação
+*Copie o `accessToken` retornado para usar nas requisições abaixo.*
 
-Abra:
+**2. Refresh Token:**
 
-```txt
-http://localhost:8761
+```bash
+curl -X POST http://localhost:8080/api/auth/refresh \
+-H "Content-Type: application/json" \
+-d '{"refreshToken": "seu_refresh_token_aqui"}'
+
 ```
 
----
+### 👤 9.2. Rota Protegida (Exige JWT)
 
-## 3. API Gateway
-
-Entre na pasta `api-gateway` e execute a aplicação.
-
-Porta:
-
-```txt
-8080
-```
-
----
-
-## 4. Microsserviços de Negócio
-
-Inicialize:
-
-- `player-service`
-- `tournament-service`
-- `registration-service`
-- `payment-service`
-- `notification-service`
-- `analytics-service`
-
-Aguarde entre 30 e 45 segundos e confirme no Eureka que todos estão `UP`.
-
----
-
-# 🧪 8. Guia de Endpoints e Testes
-
-Todas as requisições externas devem passar pelo:
-
-```txt
-http://localhost:8080
-```
-
----
-
-## Criar Novo Jogador (Player Service)
+**Criar/Atualizar Jogador:**
 
 ```bash
 curl -X POST http://localhost:8080/api/players \
+-H "Authorization: Bearer SEU_TOKEN_AQUI" \
 -H "Content-Type: application/json" \
 -d '{
   "nome": "Faker",
   "nickname": "Hide on bush",
   "email": "faker@t1.gg"
 }'
+
 ```
 
----
+### 🏆 9.3. Fluxo de Negócio e Kafka (TP2)
 
-## Efetuar Inscrição em Torneio
-
-### Registration Service → Payment Service
+**Efetuar Inscrição (Registration -> Payment -> Kafka -> Notification):**
 
 ```bash
 curl -X POST http://localhost:8080/api/registrations \
+-H "Authorization: Bearer SEU_TOKEN_AQUI" \
 -H "Content-Type: application/json" \
 -d '{
   "playerId": 1,
   "tournamentId": 105,
   "metodoPagamento": "PIX"
 }'
+
 ```
 
----
-
-# 📸 9. Evidências Visuais (Placeholders para o TP)
-
-> Atenção equipe: anexem as capturas de tela obrigatórias solicitadas na entrega substituindo as marcações abaixo pelos arquivos reais gerados.
+*Resultado esperado:* O pagamento é aprovado, um evento é publicado no Kafka, e o console do `notification-service` registra o envio do e-mail.
 
 ---
 
-## Registro de Serviços no Dashboard do Eureka
+## 📸 10. Evidências Visuais e Entregáveis
 
-*(Inserir imagem aqui)*
+> *Atenção equipe: Substituam as marcações abaixo pelos prints reais antes do envio do arquivo `.zip` final.*
+
+### 📍 TP1: Proposta e Arquitetura
+
+* **Serviços Registrados no Eureka:** `[Inserir imagem do Dashboard do Eureka]`
+* **Circuit Breaker Atuando (Status `AGUARDANDO_PAGAMENTO`):** `[Inserir imagem da requisição com o Payment derrubado]`
+* **Persistência Poliglota Populada:** `[Inserir print do MongoDB Compass ou ElasticHQ]`
+
+### 📍 TP2: Observabilidade, Mensageria e Reatividade
+
+* **Métricas e Logs (Correlation ID visível):** `[Inserir print do console mostrando logs com IDs de rastreamento]`
+* **Evento consumido no Kafka:** `[Inserir print do console do notification-service indicando recebimento do PagamentoAprovado]`
+* **Endpoint Reativo WebFlux:** `[Inserir print do Postman consumindo um endpoint não-bloqueante]`
+
+### 📍 TP3: Segurança e Autenticação
+
+* **Falha de Acesso (401/403):** `[Inserir print de acesso a rota protegida sem token]`
+* **Geração de Token (200 OK):** `[Inserir print do Postman no /auth/login]`
+* **Renovação via Refresh Token:** `[Inserir print do Postman no /auth/refresh]`
+
 
 ---
 
-## Evidência de Funcionamento do Circuit Breaker
-
-### Status `"AGUARDANDO_PAGAMENTO"`
-
-*(Inserir imagem aqui)*
-
----
-
-## Persistência Poliglota Populada
-
-### Elasticsearch ou MongoDB
-
-*(Inserir imagem aqui)*
-
----
-
-# ✅ Observações Finais
-
-Se alguém do grupo tiver problemas ao integrar as peças, basta alinhar via Pull Request e revisão de código.
+*Projeto acadêmico desenvolvido para a disciplina de Microsserviços e DevOps com Spring Boot e Spring Cloud.*
