@@ -17,11 +17,11 @@ public class RuleSet {
     private Long id;
 
     @Column(nullable = false)
-    private String formato; // Ex: "SINGLE_ELIMINATION", "DOUBLE_ELIMINATION", "ROUND_ROBIN"
+    private String formato;
 
     @Column(name = "max_participants", nullable = false)
     private Integer maxParticipantes;
 
     @Column(name = "best_of")
-    private Integer melhorDe; // Ex: Melhor de 1 (MD1), Melhor de 3 (MD3)
+    private Integer melhorDe;
 }

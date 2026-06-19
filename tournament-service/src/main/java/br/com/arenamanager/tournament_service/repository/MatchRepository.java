@@ -6,7 +6,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-// Repositório para cuidar de todas as operações do banco para a entidade Match
 @Repository
 public interface MatchRepository extends JpaRepository<Match, Long> {
 

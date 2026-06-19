@@ -22,7 +22,6 @@ public class Match {
     @JoinColumn(name = "tournament_id", nullable = false)
     private Tournament tournament;
 
-    // IDs dos participantes (Vêm de outro microsserviço, então são apenas Strings/UUIDs)
     @Column(name = "participant1_id")
     private String participant1Id;
 
@@ -38,7 +37,6 @@ public class Match {
     @Column(name = "winner_id")
     private String vencedorId;
 
-    // O cronograma (Schedule) pode ser simplificado como a data agendada da partida
     @Column(name = "scheduled_time")
     private LocalDateTime scheduledTime;
 

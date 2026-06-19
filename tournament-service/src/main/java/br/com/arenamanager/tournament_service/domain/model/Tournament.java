@@ -34,10 +34,6 @@ public class Tournament {
     @Column(name = "end_date")
     private LocalDateTime data_fim;
 
-    // Futuramente, adicionaremos aqui os relacionamentos:
-    // @OneToMany(mappedBy = "tournament")
-    // private List<Match> matches;
-
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "rule_set_id")
     private RuleSet regras;
