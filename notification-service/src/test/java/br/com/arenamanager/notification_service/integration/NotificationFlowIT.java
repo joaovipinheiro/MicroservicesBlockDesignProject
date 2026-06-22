@@ -1,6 +1,6 @@
 package br.com.arenamanager.notification_service.integration;
 
-import br.com.arenamanager.notification_service.infrastructure.kafka.event.PagamentoAprovadoEvent;
+import br.com.arenamanager.notification_service.infrastructure.kafka.event.PaymentApprovedEvent;
 import br.com.arenamanager.notification_service.infrastructure.mongodb.document.EmailTemplateDocument;
 import br.com.arenamanager.notification_service.infrastructure.mongodb.document.NotificationLogDocument;
 import br.com.arenamanager.notification_service.infrastructure.mongodb.repository.EmailTemplateMongoRepository;
@@ -44,7 +44,7 @@ import static org.mockito.Mockito.when;
 /**
  * End-to-end integration tests for the notification flow.
  *
- * <p>Publishes a {@link PagamentoAprovadoEvent} to the embedded Kafka topic and
+ * <p>Publishes a {@link PaymentApprovedEvent} to the embedded Kafka topic and
  * verifies the full flow: Kafka consumption → email sending → NotificationLog persistence.
  *
  * <p>Uses:
@@ -133,7 +133,7 @@ class NotificationFlowIT {
 
     // =========================================================================
     // E2E Scenario 1: Happy path
-    // Publish PagamentoAprovadoEvent → NotificationLog SENT in MongoDB
+    // Publish PaymentApprovedEvent → NotificationLog SENT in MongoDB
     //                                → JavaMailSender.send() called exactly once
     //                                → to = event.playerEmail()
     // Validates: Requirements 1.1, 4.1, 5.1
@@ -155,7 +155,7 @@ class NotificationFlowIT {
 
         String eventId = UUID.randomUUID().toString();
         String playerEmail = "jogador.e2e@arenamanager.com";
-        PagamentoAprovadoEvent event = buildEvent(eventId, playerEmail);
+        PaymentApprovedEvent event = buildEvent(eventId, playerEmail);
         String payload = objectMapper.writeValueAsString(event);
 
         // When — publish the event to the Kafka topic
@@ -204,7 +204,7 @@ class NotificationFlowIT {
 
         String eventId = UUID.randomUUID().toString();
         String playerEmail = "subject.test@arenamanager.com";
-        PagamentoAprovadoEvent event = buildEventWithTournamentName(eventId, playerEmail, tournamentName);
+        PaymentApprovedEvent event = buildEventWithTournamentName(eventId, playerEmail, tournamentName);
         String payload = objectMapper.writeValueAsString(event);
 
         // Capture the MimeMessage sent so we can inspect its subject
@@ -245,13 +245,13 @@ class NotificationFlowIT {
     // Helpers
     // =========================================================================
 
-    private PagamentoAprovadoEvent buildEvent(String eventId, String playerEmail) {
+    private PaymentApprovedEvent buildEvent(String eventId, String playerEmail) {
         return buildEventWithTournamentName(eventId, playerEmail, "Copa Arena 2026");
     }
 
-    private PagamentoAprovadoEvent buildEventWithTournamentName(
+    private PaymentApprovedEvent buildEventWithTournamentName(
             String eventId, String playerEmail, String tournamentName) {
-        return new PagamentoAprovadoEvent(
+        return new PaymentApprovedEvent(
                 1L,
                 "Jogador E2E",
                 playerEmail,

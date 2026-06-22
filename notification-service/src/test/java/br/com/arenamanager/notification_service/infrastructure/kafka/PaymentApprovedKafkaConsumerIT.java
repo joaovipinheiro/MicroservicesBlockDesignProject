@@ -1,6 +1,6 @@
 package br.com.arenamanager.notification_service.infrastructure.kafka;
 
-import br.com.arenamanager.notification_service.infrastructure.kafka.event.PagamentoAprovadoEvent;
+import br.com.arenamanager.notification_service.infrastructure.kafka.event.PaymentApprovedEvent;
 import br.com.arenamanager.notification_service.infrastructure.mongodb.document.EmailTemplateDocument;
 import br.com.arenamanager.notification_service.infrastructure.mongodb.document.NotificationLogDocument;
 import br.com.arenamanager.notification_service.infrastructure.mongodb.repository.EmailTemplateMongoRepository;
@@ -54,7 +54,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Integration tests for {@link br.com.arenamanager.notification_service.infrastructure.kafka.consumer.PagamentoAprovadoKafkaConsumer}.
+ * Integration tests for {@link br.com.arenamanager.notification_service.infrastructure.kafka.consumer.PaymentApprovedKafkaConsumer}.
  *
  * <p>Uses {@link EmbeddedKafka} + Flapdoodle Embedded MongoDB for a full integration test
  * without external dependencies.</p>
@@ -169,14 +169,14 @@ class PagamentoAprovadoKafkaConsumerIT {
         emailTemplateMongoRepository.save(template);
 
         String eventId = UUID.randomUUID().toString();
-        PagamentoAprovadoEvent event = buildEvent(eventId);
+        PaymentApprovedEvent event = buildEvent(eventId);
         String payload = objectMapper.writeValueAsString(event);
 
         // When — publish to topic
         kafkaTemplate.send(TOPIC, eventId, payload).get(10, TimeUnit.SECONDS);
 
         // Then — wait until NotificationLog is persisted
-        String expectedLogId = String.valueOf(event.pagamentoId());
+        String expectedLogId = String.valueOf(event.paymentId());
         await().atMost(Duration.ofSeconds(20))
                 .pollInterval(Duration.ofMillis(200))
                 .untilAsserted(() -> {
@@ -185,7 +185,7 @@ class PagamentoAprovadoKafkaConsumerIT {
                     NotificationLogDocument savedLog = logOpt.get();
                     assertThat(savedLog.getStatus()).isEqualTo("SENT");
                     assertThat(savedLog.getEventId()).isEqualTo(expectedLogId);
-                    assertThat(savedLog.getPlayerEmail()).isEqualTo(event.emailJogador());
+                    assertThat(savedLog.getPlayerEmail()).isEqualTo(event.playerEmail());
                     assertThat(savedLog.getErrorMessage()).isNull();
                 });
     }
@@ -246,7 +246,7 @@ class PagamentoAprovadoKafkaConsumerIT {
         emailTemplateMongoRepository.save(template);
 
         String eventId = UUID.randomUUID().toString();
-        PagamentoAprovadoEvent event = buildEvent(eventId);
+        PaymentApprovedEvent event = buildEvent(eventId);
         String payload = objectMapper.writeValueAsString(event);
 
         // When — publish the same event twice
@@ -294,7 +294,7 @@ class PagamentoAprovadoKafkaConsumerIT {
         // Given — NO email template seeded (causes TemplateNotFoundException on every attempt)
         String eventId = UUID.randomUUID().toString();
         String traceId = "trace-dlq-test-" + UUID.randomUUID();
-        PagamentoAprovadoEvent event = buildEventWithTraceId(eventId, traceId);
+        PaymentApprovedEvent event = buildEventWithTraceId(eventId, traceId);
         String payload = objectMapper.writeValueAsString(event);
 
         // When — publish to topic with traceId header
@@ -344,11 +344,11 @@ class PagamentoAprovadoKafkaConsumerIT {
         String eventId = UUID.randomUUID().toString();
         String headerTraceId = "header-trace-" + UUID.randomUUID();
 
-        // Create a PagamentoAprovadoEvent with a different traceId in the body
+        // Create a PaymentApprovedEvent with a different traceId in the body
         // The header traceId should be propagated to MDC, but the event's own traceId
         // is what gets stored in the NotificationLog via the domain flow.
         // This test verifies the header is read without error.
-        PagamentoAprovadoEvent event = buildEventWithTraceId(eventId, headerTraceId);
+        PaymentApprovedEvent event = buildEventWithTraceId(eventId, headerTraceId);
         String payload = objectMapper.writeValueAsString(event);
 
         // Publish with X-B3-TraceId header
@@ -375,14 +375,14 @@ class PagamentoAprovadoKafkaConsumerIT {
     // Helpers
     // =========================================================================
 
-    private PagamentoAprovadoEvent buildEvent(String eventId) {
+    private PaymentApprovedEvent buildEvent(String eventId) {
         return buildEventWithTraceId(eventId, "trace-" + UUID.randomUUID());
     }
 
-    private PagamentoAprovadoEvent buildEventWithTraceId(String eventId, String traceId) {
+    private PaymentApprovedEvent buildEventWithTraceId(String eventId, String traceId) {
         // Usa o hashCode do eventId como Long pra garantir unicidade entre testes
         long idAsLong = Math.abs((long) eventId.hashCode());
-        return new PagamentoAprovadoEvent(
+        return new PaymentApprovedEvent(
                 idAsLong,
                 "Test Player",
                 "player@test.com",

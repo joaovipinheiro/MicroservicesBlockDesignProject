@@ -1,6 +1,6 @@
 package br.com.arenamanager.notification_service.application.port.in;
 
-import br.com.arenamanager.notification_service.infrastructure.kafka.event.PagamentoAprovadoEvent;
+import br.com.arenamanager.notification_service.infrastructure.kafka.event.PaymentApprovedEvent;
 
 /**
  * Porta de entrada (use case) para processamento de notificações de pagamento aprovado.
@@ -15,5 +15,5 @@ public interface ProcessPaymentNotificationUseCase {
      *
      * @param event evento de pagamento aprovado consumido do Kafka
      */
-    void processPaymentApprovedNotification(PagamentoAprovadoEvent event);
+    void processPaymentApprovedNotification(PaymentApprovedEvent event);
 }

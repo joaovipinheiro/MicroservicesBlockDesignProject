@@ -1,7 +1,7 @@
 package br.com.arenamanager.notification_service.infrastructure.kafka.consumer;
 
 import br.com.arenamanager.notification_service.application.port.in.ProcessPaymentNotificationUseCase;
-import br.com.arenamanager.notification_service.infrastructure.kafka.event.PagamentoAprovadoEvent;
+import br.com.arenamanager.notification_service.infrastructure.kafka.event.PaymentApprovedEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -24,7 +24,7 @@ import java.nio.charset.StandardCharsets;
  * <p>Responsibilities:
  * <ul>
  *   <li>Propagate {@code traceId} from Kafka header {@code X-B3-TraceId} to MDC</li>
- *   <li>Deserialize JSON payload to {@link PagamentoAprovadoEvent}</li>
+ *   <li>Deserialize JSON payload to {@link PaymentApprovedEvent}</li>
  *   <li>On {@link JsonProcessingException}: log ERROR, send to DLQ immediately (no retry)</li>
  *   <li>On success or duplicate: call {@code ack.acknowledge()}</li>
  *   <li>On processing exception: re-throw so {@link org.springframework.kafka.listener.DefaultErrorHandler}
@@ -34,9 +34,9 @@ import java.nio.charset.StandardCharsets;
  * <p>Valida: Requisitos 1.1, 1.2, 1.3, 1.4, 6.1, 6.2</p>
  */
 @Component
-public class PagamentoAprovadoKafkaConsumer {
+public class PaymentApprovedKafkaConsumer {
 
-    private static final Logger log = LoggerFactory.getLogger(PagamentoAprovadoKafkaConsumer.class);
+    private static final Logger log = LoggerFactory.getLogger(PaymentApprovedKafkaConsumer.class);
 
     private static final String MDC_TRACE_ID_KEY      = "traceId";
     private static final String MDC_CORRELATION_ID_KEY = "correlationId";
@@ -50,12 +50,12 @@ public class PagamentoAprovadoKafkaConsumer {
     private final MeterRegistry meterRegistry;
     private final String dlqTopic;
 
-    public PagamentoAprovadoKafkaConsumer(
+    public PaymentApprovedKafkaConsumer(
             ProcessPaymentNotificationUseCase notificationUseCase,
             ObjectMapper objectMapper,
             KafkaTemplate<String, String> kafkaTemplate,
             MeterRegistry meterRegistry,
-            @Value("${notification.kafka.topic.dlq:pagamentos.aprovados.dlq}") String dlqTopic) {
+            @Value("${notification.kafka.topic.dlq:payments-approved-dlq}") String dlqTopic) {
         this.notificationUseCase = notificationUseCase;
         this.objectMapper        = objectMapper;
         this.kafkaTemplate       = kafkaTemplate;
@@ -70,7 +70,7 @@ public class PagamentoAprovadoKafkaConsumer {
      * @param ack    manual acknowledgment handle
      */
     @KafkaListener(
-            topics = "${notification.kafka.topic.pagamentos-aprovados}",
+            topics = "${notification.kafka.topic.payments-approved}",
             groupId = "${spring.kafka.consumer.group-id}",
             containerFactory = "kafkaListenerContainerFactory"
     )
@@ -81,10 +81,10 @@ public class PagamentoAprovadoKafkaConsumer {
         String correlationId = MDC.get(MDC_CORRELATION_ID_KEY);
 
         try {
-            PagamentoAprovadoEvent event = deserialize(record.value());
+            PaymentApprovedEvent event = deserialize(record.value());
 
-            log.info("Evento PagamentoAprovado recebido do Kafka: pagamentoId={}, emailJogador={}, correlationId={}, traceId={}",
-                    event.pagamentoId(), event.emailJogador(), correlationId, traceId);
+            log.info("Evento PagamentoAprovado recebido do Kafka: paymentId={}, playerEmail={}, correlationId={}, traceId={}",
+                    event.paymentId(), event.playerEmail(), correlationId, traceId);
 
             notificationUseCase.processPaymentApprovedNotification(event);
             ack.acknowledge();
@@ -122,12 +122,12 @@ public class PagamentoAprovadoKafkaConsumer {
     }
 
     /**
-     * Deserializes the JSON payload to a {@link PagamentoAprovadoEvent}.
+     * Deserializes the JSON payload to a {@link PaymentApprovedEvent}.
      *
      * @throws JsonProcessingException if the payload is not valid JSON or missing required fields
      */
-    private PagamentoAprovadoEvent deserialize(String payload) throws JsonProcessingException {
-        return objectMapper.readValue(payload, PagamentoAprovadoEvent.class);
+    private PaymentApprovedEvent deserialize(String payload) throws JsonProcessingException {
+        return objectMapper.readValue(payload, PaymentApprovedEvent.class);
     }
 
     /**

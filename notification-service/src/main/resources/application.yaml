@@ -68,5 +68,5 @@ eureka:
 notification:
   kafka:
     topic:
-      pagamentos-aprovados: pagamentos-aprovados
-      dlq: pagamentos-aprovados-dlq
+      payments-approved: payments-approved
+      dlq: payments-approved-dlq
