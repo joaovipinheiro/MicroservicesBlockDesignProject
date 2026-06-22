@@ -3,12 +3,12 @@ package br.com.arenamanager.payment_service.dto;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public record PagamentoResponseDTO(
+public record PaymentResponseDTO(
         Long id,
-        Long usuarioId,
-        Long torneioId,
-        BigDecimal valor,
+        Long playerId,
+        Long tournamentId,
+        BigDecimal amount,
         String status,
-        LocalDateTime dataCriacao
+        LocalDateTime createdAt
 ) {
 }
