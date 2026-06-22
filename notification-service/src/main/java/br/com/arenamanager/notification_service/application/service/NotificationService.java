@@ -8,7 +8,7 @@ import br.com.arenamanager.notification_service.domain.enums.NotificationStatus;
 import br.com.arenamanager.notification_service.domain.model.EmailMessage;
 import br.com.arenamanager.notification_service.domain.model.NotificationLog;
 import br.com.arenamanager.notification_service.infrastructure.email.EmailBuilderService;
-import br.com.arenamanager.notification_service.infrastructure.kafka.event.PagamentoAprovadoEvent;
+import br.com.arenamanager.notification_service.infrastructure.kafka.event.PaymentApprovedEvent;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.stereotype.Service;
 
@@ -63,10 +63,10 @@ public class NotificationService implements ProcessPaymentNotificationUseCase {
      * @param event evento de pagamento aprovado consumido do Kafka
      */
     @Override
-    public void processPaymentApprovedNotification(PagamentoAprovadoEvent event) {
+    public void processPaymentApprovedNotification(PaymentApprovedEvent event) {
 
         // --- Idempotência: verificar se o evento já foi processado com sucesso ---
-        String eventId = String.valueOf(event.pagamentoId());
+        String eventId = String.valueOf(event.paymentId());
         Optional<NotificationLog> existingLog = logRepository.findByEventId(eventId);
         if (existingLog.isPresent() &&
                 (existingLog.get().status() == NotificationStatus.SENT ||
@@ -85,7 +85,7 @@ public class NotificationService implements ProcessPaymentNotificationUseCase {
         } catch (RuntimeException ex) {
             // Persiste o log de falha apenas se ainda não houver um log para este evento
             // (evita conflito de índice único em retentativas do Kafka)
-            if (!logRepository.existsByEventId(String.valueOf(event.pagamentoId()))) {
+            if (!logRepository.existsByEventId(String.valueOf(event.paymentId()))) {
                 NotificationLog failedLog = buildLog(event, NotificationStatus.FAILED, ex.getMessage());
                 logRepository.save(failedLog);   // MongoException aqui propaga diretamente
             }
@@ -103,19 +103,19 @@ public class NotificationService implements ProcessPaymentNotificationUseCase {
     // Helpers privados
     // -------------------------------------------------------------------------
 
-    private NotificationLog buildLog(PagamentoAprovadoEvent event,
+    private NotificationLog buildLog(PaymentApprovedEvent event,
                                      NotificationStatus status,
                                      String errorMessage) {
         return new NotificationLog(
                 null,
-                String.valueOf(event.pagamentoId()),
-                String.valueOf(event.pagamentoId()),
-                String.valueOf(event.torneioId()),
-                event.emailJogador(),
+                String.valueOf(event.paymentId()),
+                String.valueOf(event.paymentId()),
+                String.valueOf(event.tournamentId()),
+                event.playerEmail(),
                 status,
                 errorMessage,
                 Instant.now(),
-                String.valueOf(event.pagamentoId())
+                String.valueOf(event.paymentId())
         );
     }
 }

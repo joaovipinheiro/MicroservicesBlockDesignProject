@@ -1,6 +1,5 @@
 package br.com.arenamanager.tournament_service.Dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,12 +9,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class TournamentCreatedEvent {
 
-    @JsonProperty("tournamentId")
-    private Long idTorneio;
+    private Long tournamentId;
 
-    @JsonProperty("name")
-    private String nome;
+    private String name;
 
-    @JsonProperty("format")
-    private String formato;
+    private String format;
 }

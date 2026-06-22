@@ -4,7 +4,7 @@ import br.com.arenamanager.notification_service.application.port.out.EmailTempla
 import br.com.arenamanager.notification_service.domain.exception.TemplateNotFoundException;
 import br.com.arenamanager.notification_service.domain.model.EmailMessage;
 import br.com.arenamanager.notification_service.domain.model.EmailTemplate;
-import br.com.arenamanager.notification_service.infrastructure.kafka.event.PagamentoAprovadoEvent;
+import br.com.arenamanager.notification_service.infrastructure.kafka.event.PaymentApprovedEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,11 +33,11 @@ class EmailBuilderServiceTest {
     @InjectMocks
     private EmailBuilderService emailBuilderService;
 
-    private PagamentoAprovadoEvent event;
+    private PaymentApprovedEvent event;
 
     @BeforeEach
     void setUp() {
-        event = new PagamentoAprovadoEvent(
+        event = new PaymentApprovedEvent(
                 1L,
                 "João Silva",
                 "jogador@exemplo.com",

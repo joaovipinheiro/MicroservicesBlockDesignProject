@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Configuration;
  * processed.  The actual {@code .increment()} / {@code .record()} calls happen in
  * {@link br.com.arenamanager.notification_service.application.service.NotificationService}
  * and
- * {@link br.com.arenamanager.notification_service.infrastructure.kafka.consumer.PagamentoAprovadoKafkaConsumer}.
+ * {@link br.com.arenamanager.notification_service.infrastructure.kafka.consumer.PaymentApprovedKafkaConsumer}.
  *
  * <p>Registered metrics:
  * <ul>

@@ -20,7 +20,7 @@ public class Player {
     private Long id;
 
     @Column(nullable = false, length = 100)
-    private String nome;
+    private String name;
 
     @Column(nullable = false, unique = true, length = 50)
     private String nickname;

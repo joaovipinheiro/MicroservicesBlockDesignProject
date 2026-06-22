@@ -31,7 +31,7 @@ import org.springframework.context.annotation.Configuration;
  * </pre>
  *
  * <h2>Kafka header propagation</h2>
- * The {@link br.com.arenamanager.notification_service.infrastructure.kafka.consumer.PagamentoAprovadoKafkaConsumer}
+ * The {@link br.com.arenamanager.notification_service.infrastructure.kafka.consumer.PaymentApprovedKafkaConsumer}
  * reads the {@code X-B3-TraceId} header from incoming Kafka records and places it in
  * MDC manually before delegating to the use case.  This allows correlation of Kafka
  * consumer logs with the originating HTTP span in the {@code payment-service}.

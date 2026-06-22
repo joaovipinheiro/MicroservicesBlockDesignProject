@@ -4,6 +4,7 @@ import br.com.arenamanager.tournament_service.Dto.TournamentRequest;
 import br.com.arenamanager.tournament_service.Dto.TournamentResponse;
 import br.com.arenamanager.tournament_service.domain.model.Tournament;
 import br.com.arenamanager.tournament_service.service.TournamentService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -29,11 +30,11 @@ public class TournamentController {
 
     @PostMapping
     public ResponseEntity<TournamentResponse> create(
-            @RequestBody TournamentRequest request,
+            @RequestBody @Valid TournamentRequest request,
             @RequestHeader(value = HEADER_CORRELATION_ID, required = false) String correlationId) {
         setupMdc(correlationId);
         try {
-            log.info("Requisição recebida: POST /tournament, caller=api-gateway/registration-service, nome={}", request.getNome());
+            log.info("Requisição recebida: POST /tournament, caller=api-gateway/registration-service, nome={}", request.getName());
             TournamentResponse response = tournamentService.createTournament(request);
             log.info("Resposta enviada: POST /tournament, status=201, idTorneio={}", response.getId());
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -82,7 +83,7 @@ public class TournamentController {
         MDC.put("correlationId", correlationId != null ? correlationId : UUID.randomUUID().toString());
     }
 
-    @PatchMapping("/{id}/abrir-inscricoes")
+    @PatchMapping("/{id}/open-registration")
     public ResponseEntity<TournamentResponse> abrirInscricoes(@PathVariable Long id) {
         TournamentResponse response = tournamentService.abrirInscricoes(id);
         return ResponseEntity.ok(response);

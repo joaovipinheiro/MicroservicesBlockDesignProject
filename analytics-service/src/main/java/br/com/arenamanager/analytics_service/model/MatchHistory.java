@@ -11,22 +11,22 @@ public class MatchHistory {
     private String id;
 
     @Field(type = FieldType.Long)
-    private Long idTorneio;
+    private Long tournamentId;
 
     @Field(type = FieldType.Text)
-    private String nome;
+    private String name;
 
     @Field(type = FieldType.Text)
-    private String formato;
+    private String format;
 
     public MatchHistory() {}
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
-    public Long getIdTorneio() { return idTorneio; }
-    public void setIdTorneio(Long idTorneio) { this.idTorneio = idTorneio; }
-    public String getNome() { return nome; }
-    public void setNome(String nome) { this.nome = nome; }
-    public String getFormato() { return formato; }
-    public void setFormato(String formato) { this.formato = formato; }
+    public Long getTournamentId() { return tournamentId; }
+    public void setTournamentId(Long tournamentId) { this.tournamentId = tournamentId; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getFormat() { return format; }
+    public void setFormat(String format) { this.format = format; }
 }

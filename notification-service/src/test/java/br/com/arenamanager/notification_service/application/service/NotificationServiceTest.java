@@ -9,7 +9,7 @@ import br.com.arenamanager.notification_service.domain.model.EmailMessage;
 import br.com.arenamanager.notification_service.domain.model.EmailTemplate;
 import br.com.arenamanager.notification_service.domain.model.NotificationLog;
 import br.com.arenamanager.notification_service.infrastructure.email.EmailBuilderService;
-import br.com.arenamanager.notification_service.infrastructure.kafka.event.PagamentoAprovadoEvent;
+import br.com.arenamanager.notification_service.infrastructure.kafka.event.PaymentApprovedEvent;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,7 +47,7 @@ class NotificationServiceTest {
     // Cenário 1: Evento novo → e-mail enviado e log SENT
     @Test
     void whenNewEvent_thenEmailSentAndLogSavedWithStatusSent() {
-        PagamentoAprovadoEvent event = buildEvent();
+        PaymentApprovedEvent event = buildEvent();
         EmailMessage emailMessage = new EmailMessage("jogador@exemplo.com", "Assunto", "<h1>Olá!</h1>", "1");
 
         when(logRepository.findByEventId("1")).thenReturn(java.util.Optional.empty());
@@ -69,7 +69,7 @@ class NotificationServiceTest {
     // Cenário 2: Evento duplicado → log DUPLICATE, sem envio
     @Test
     void whenDuplicateEvent_thenLogSavedWithStatusDuplicate() {
-        PagamentoAprovadoEvent event = buildEvent();
+        PaymentApprovedEvent event = buildEvent();
         NotificationLog existing = new NotificationLog(
                 "id", "1", "1", "2", "jogador@exemplo.com",
                 NotificationStatus.SENT, null, Instant.now(), "1");
@@ -89,7 +89,7 @@ class NotificationServiceTest {
     // Cenário 3: Template não encontrado → log FAILED, exceção propagada
     @Test
     void whenTemplateNotFound_thenLogSavedWithStatusFailedAndExceptionPropagated() {
-        PagamentoAprovadoEvent event = buildEvent();
+        PaymentApprovedEvent event = buildEvent();
         when(logRepository.findByEventId("1")).thenReturn(java.util.Optional.empty());
         when(emailBuilderService.build(event)).thenThrow(new TemplateNotFoundException("PAGAMENTO_APROVADO"));
         when(logRepository.existsByEventId("1")).thenReturn(false);
@@ -107,7 +107,7 @@ class NotificationServiceTest {
     // Cenário 4: MailException → log FAILED, exceção propagada
     @Test
     void whenMailExceptionThrown_thenLogSavedWithStatusFailedAndExceptionPropagated() {
-        PagamentoAprovadoEvent event = buildEvent();
+        PaymentApprovedEvent event = buildEvent();
         EmailMessage emailMessage = new EmailMessage("jogador@exemplo.com", "Assunto", "<h1>Olá!</h1>", "1");
 
         when(logRepository.findByEventId("1")).thenReturn(java.util.Optional.empty());
@@ -128,7 +128,7 @@ class NotificationServiceTest {
     // Cenário 5: MongoException ao salvar → exceção propagada
     @Test
     void whenMongoExceptionOnSave_thenExceptionPropagated() {
-        PagamentoAprovadoEvent event = buildEvent();
+        PaymentApprovedEvent event = buildEvent();
         EmailMessage emailMessage = new EmailMessage("jogador@exemplo.com", "Assunto", "<h1>Olá!</h1>", "1");
 
         when(logRepository.findByEventId("1")).thenReturn(java.util.Optional.empty());
@@ -140,7 +140,7 @@ class NotificationServiceTest {
                 () -> notificationService.processPaymentApprovedNotification(event));
     }
 
-    private PagamentoAprovadoEvent buildEvent() {
-        return new PagamentoAprovadoEvent(1L, "João da Silva", "jogador@exemplo.com", 2L, new BigDecimal("99.90"));
+    private PaymentApprovedEvent buildEvent() {
+        return new PaymentApprovedEvent(1L, "João da Silva", "jogador@exemplo.com", 2L, new BigDecimal("99.90"));
     }
 }

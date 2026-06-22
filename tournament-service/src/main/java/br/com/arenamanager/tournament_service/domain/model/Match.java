@@ -35,11 +35,12 @@ public class Match {
     private Integer participant2Score = 0;
 
     @Column(name = "winner_id")
-    private String vencedorId;
+    private String winnerId;
 
     @Column(name = "scheduled_time")
     private LocalDateTime scheduledTime;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status; // Ex: "SCHEDULED", "IN_PROGRESS", "COMPLETED"
+    private MatchStatus status;
 }

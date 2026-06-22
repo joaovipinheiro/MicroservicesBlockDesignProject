@@ -25,11 +25,12 @@ public class Registration {
     @Column(name = "tournament_id", nullable = false)
     private Long tournamentId;
 
-    @Column(name = "metodo_pagamento", nullable = false)
-    private String metodoPagamento;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", nullable = false)
+    private PaymentMethod paymentMethod;
 
     @Column(nullable = false)
-    private BigDecimal valor;
+    private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -42,7 +43,7 @@ public class Registration {
     private void prePersist() {
         this.createdAt = LocalDateTime.now();
         if (this.status == null) {
-            this.status = RegistrationStatus.AGUARDANDO_PAGAMENTO;
+            this.status = RegistrationStatus.AWAITING_PAYMENT;
         }
     }
 }

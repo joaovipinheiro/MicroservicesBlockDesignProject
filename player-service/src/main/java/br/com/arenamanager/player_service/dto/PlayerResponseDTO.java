@@ -2,7 +2,7 @@ package br.com.arenamanager.player_service.dto;
 
 public record PlayerResponseDTO(
         Long id,
-        String nome,
+        String name,
         String nickname,
         String email
 ) {

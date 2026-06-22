@@ -128,7 +128,7 @@ Cliente → Request + Authorization: Bearer → Gateway → Serviços Protegidos
 Para reduzir o acoplamento e tolerar falhas, utilizamos mensageria para processos em background.
 
 * **Evento de Domínio:** `PagamentoAprovadoEvent`.
-* **Tópico:** `payments.approved`
+* **Tópico:** `payments-approved`
 * **Fluxo:** Quando o `payment-service` (Produtor) processa uma taxa com sucesso, ele publica no tópico. O `notification-service` (Consumidor) escuta este evento e dispara o e-mail.
 
 **Exemplo de Payload no Kafka:**
@@ -206,7 +206,7 @@ Registration → Tenta chamar Payment → Payment OFF/Timeout → Dispara Fallba
 ```
 
 **Regra de Negócio do Fallback:**
-A inscrição não será perdida; ela será salva localmente de forma assíncrona com o status `"AGUARDANDO_PAGAMENTO"`. O jogador recebe um HTTP 202 (Accepted) imediatamente.
+A inscrição não será perdida; ela será salva localmente de forma assíncrona com o status `"AWAITING_PAYMENT"`. O jogador recebe um HTTP 202 (Accepted) imediatamente.
 
 ---
 
@@ -292,7 +292,7 @@ curl -X POST http://localhost:8080/api/players \
 -H "Authorization: Bearer SEU_TOKEN_AQUI" \
 -H "Content-Type: application/json" \
 -d '{
-  "nome": "Faker",
+  "name": "Faker",
   "nickname": "Hide on bush",
   "email": "faker@t1.gg"
 }'
@@ -310,7 +310,8 @@ curl -X POST http://localhost:8080/api/registrations \
 -d '{
   "playerId": 1,
   "tournamentId": 105,
-  "metodoPagamento": "PIX"
+  "paymentMethod": "PIX",
+  "amount": 50.00
 }'
 
 ```
@@ -326,7 +327,7 @@ curl -X POST http://localhost:8080/api/registrations \
 ### 📍 TP1: Proposta e Arquitetura
 
 * **Serviços Registrados no Eureka:** `[Inserir imagem do Dashboard do Eureka]`
-* **Circuit Breaker Atuando (Status `AGUARDANDO_PAGAMENTO`):** `[Inserir imagem da requisição com o Payment derrubado]`
+* **Circuit Breaker Atuando (Status `AWAITING_PAYMENT`):** `[Inserir imagem da requisição com o Payment derrubado]`
 * **Persistência Poliglota Populada:** `[Inserir print do MongoDB Compass ou ElasticHQ]`
 
 ### 📍 TP2: Observabilidade, Mensageria e Reatividade

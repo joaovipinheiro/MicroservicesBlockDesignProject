@@ -40,17 +40,17 @@ public class TournamentProducer {
             record.headers().add(new RecordHeader(HEADER_CORRELATION, correlationId.getBytes(StandardCharsets.UTF_8)));
         }
 
-        log.info("Publicando evento Kafka: topic={}, idTorneio={}, correlationId={}", TOPIC_NAME, event.getIdTorneio(), correlationId);
+        log.info("Publicando evento Kafka: topic={}, idTorneio={}, correlationId={}", TOPIC_NAME, event.getTournamentId(), correlationId);
 
         kafkaTemplate.send(record).whenComplete((result, ex) -> {
             if (ex != null) {
                 log.error("Erro ao publicar evento Kafka: topic={}, idTorneio={}, correlationId={}, erro={}",
-                        TOPIC_NAME, event.getIdTorneio(), correlationId, ex.getMessage());
+                        TOPIC_NAME, event.getTournamentId(), correlationId, ex.getMessage());
                 meterRegistry.counter("tournaments.kafka.events.total", "topic", TOPIC_NAME, "status", "falha").increment();
                 throw new RuntimeException("Falha ao publicar no Kafka", ex);
             } else {
                 log.info("Evento Kafka publicado com sucesso: topic={}, idTorneio={}, partition={}, offset={}, correlationId={}",
-                        TOPIC_NAME, event.getIdTorneio(),
+                        TOPIC_NAME, event.getTournamentId(),
                         result.getRecordMetadata().partition(),
                         result.getRecordMetadata().offset(),
                         correlationId);
@@ -61,7 +61,7 @@ public class TournamentProducer {
 
     private void publishFallback(TournamentCreatedEvent event, Throwable ex) {
         log.warn("Circuit breaker ABERTO — evento Kafka bloqueado: topic={}, idTorneio={}, correlationId={}, motivo={}",
-                TOPIC_NAME, event.getIdTorneio(), MDC.get("correlationId"), ex.getMessage());
+                TOPIC_NAME, event.getTournamentId(), MDC.get("correlationId"), ex.getMessage());
         meterRegistry.counter("tournaments.kafka.events.total", "topic", TOPIC_NAME, "status", "circuit-breaker").increment();
     }
 }

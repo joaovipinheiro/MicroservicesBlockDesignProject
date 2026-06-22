@@ -4,13 +4,13 @@ import br.com.arenamanager.notification_service.application.port.out.EmailTempla
 import br.com.arenamanager.notification_service.domain.exception.TemplateNotFoundException;
 import br.com.arenamanager.notification_service.domain.model.EmailMessage;
 import br.com.arenamanager.notification_service.domain.model.EmailTemplate;
-import br.com.arenamanager.notification_service.infrastructure.kafka.event.PagamentoAprovadoEvent;
+import br.com.arenamanager.notification_service.infrastructure.kafka.event.PaymentApprovedEvent;
 import org.springframework.stereotype.Component;
 
 import java.math.RoundingMode;
 
 /**
- * Constrói o {@link EmailMessage} a partir de um {@link PagamentoAprovadoEvent}
+ * Constrói o {@link EmailMessage} a partir de um {@link PaymentApprovedEvent}
  * e do template MongoDB do tipo {@code PAGAMENTO_APROVADO}.
  *
  * <p>Valida: Requisitos 3.3, 3.4</p>
@@ -33,25 +33,25 @@ public class EmailBuilderService {
      * @return e-mail pronto para envio
      * @throws TemplateNotFoundException se o template {@code PAGAMENTO_APROVADO} não for encontrado
      */
-    public EmailMessage build(PagamentoAprovadoEvent event) {
+    public EmailMessage build(PaymentApprovedEvent event) {
         EmailTemplate template = templateRepository.findByType(TEMPLATE_TYPE)
                 .orElseThrow(() -> new TemplateNotFoundException(TEMPLATE_TYPE));
 
         String body = interpolate(template.bodyHtml(), event);
         String subject = interpolate(template.subject(), event);
 
-        return new EmailMessage(event.emailJogador(), subject, body,
-                String.valueOf(event.pagamentoId()));
+        return new EmailMessage(event.playerEmail(), subject, body,
+                String.valueOf(event.paymentId()));
     }
 
-    private String interpolate(String template, PagamentoAprovadoEvent event) {
-        String amount = event.valor() != null
-                ? event.valor().setScale(2, RoundingMode.HALF_UP).toPlainString()
+    private String interpolate(String template, PaymentApprovedEvent event) {
+        String amount = event.amount() != null
+                ? event.amount().setScale(2, RoundingMode.HALF_UP).toPlainString()
                 : "";
 
         return template
-                .replace("{{playerName}}", nvl(event.nomeJogador()))
-                .replace("{{tournamentName}}", nvl(String.valueOf(event.torneioId())))
+                .replace("{{playerName}}", nvl(event.playerName()))
+                .replace("{{tournamentName}}", nvl(String.valueOf(event.tournamentId())))
                 .replace("{{amount}}", amount)
                 .replace("{{currency}}", "BRL")
                 .replace("{{approvedAt}}", "");
