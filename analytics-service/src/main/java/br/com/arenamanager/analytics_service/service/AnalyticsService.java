@@ -17,22 +17,22 @@ public class AnalyticsService {
     }
 
     public MatchHistory processarESalvarPartida(MatchHistoryRequest request) {
-        if (request.getNome() == null || request.getNome().isBlank()) {
+        if (request.getName() == null || request.getName().isBlank()) {
             throw new AnalyticsException("O nome do torneio nao pode estar vazio.");
         }
 
         MatchHistory history = new MatchHistory();
-        history.setIdTorneio(request.getIdTorneio());
-        history.setNome(request.getNome());
-        history.setFormato(request.getFormato());
+        history.setTournamentId(request.getTournamentId());
+        history.setName(request.getName());
+        history.setFormat(request.getFormat());
 
         return repository.save(history);
     }
 
-    public List<MatchHistory> obterHistoricoPorJogador(String nome) {
-        List<MatchHistory> resultados = repository.findByNomeContaining(nome);
+    public List<MatchHistory> obterHistoricoPorJogador(String name) {
+        List<MatchHistory> resultados = repository.findByNameContaining(name);
         if (resultados.isEmpty()) {
-            throw new AnalyticsException("Nenhum historico encontrado para o torneio: " + nome);
+            throw new AnalyticsException("Nenhum historico encontrado para o torneio: " + name);
         }
         return resultados;
     }

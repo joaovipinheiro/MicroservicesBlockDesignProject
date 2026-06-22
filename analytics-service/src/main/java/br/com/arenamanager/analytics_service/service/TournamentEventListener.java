@@ -36,16 +36,16 @@ public class TournamentEventListener {
 
         try {
             log.info("Evento TournamentCreated recebido do Kafka: tournamentId={}, nome={}, correlationId={}",
-                    evento.id(), evento.nome(), MDC.get("correlationId"));
+                    evento.tournamentId(), evento.name(), MDC.get("correlationId"));
 
             MatchHistory history = new MatchHistory();
-            history.setIdTorneio(evento.id());
-            history.setNome(evento.nome());
-            history.setFormato(evento.formato());
+            history.setTournamentId(evento.tournamentId());
+            history.setName(evento.name());
+            history.setFormat(evento.format());
 
             repository.save(history);
 
-            log.info("Torneio salvo no Elasticsearch: tournamentId={}, nome={}", evento.id(), evento.nome());
+            log.info("Torneio salvo no Elasticsearch: tournamentId={}, nome={}", evento.tournamentId(), evento.name());
         } finally {
             MDC.clear();
         }

@@ -5,5 +5,5 @@ import java.util.List;
 
 public interface MatchHistoryRepository extends ElasticsearchRepository<MatchHistory, String> {
     // Busca automática que o Spring Data gera para nós pesquisarmos por Nickname
-    List<MatchHistory> findByNomeContaining(String nome);
+    List<MatchHistory> findByNameContaining(String name);
 }
