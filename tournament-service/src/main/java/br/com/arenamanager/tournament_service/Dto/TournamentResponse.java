@@ -13,9 +13,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class TournamentResponse {
     private Long id;
-    private String nome;
-    private String descricao;
+    private String name;
+    private String description;
     private TournamentStatus status;
-    private LocalDateTime data_inicio;
-    private LocalDateTime data_fim;
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
 }

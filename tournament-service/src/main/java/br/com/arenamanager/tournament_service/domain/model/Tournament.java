@@ -19,25 +19,25 @@ public class Tournament {
     private Long id;
 
     @Column(nullable = false)
-    private String nome;
+    private String name;
 
     @Column(columnDefinition = "TEXT")
-    private String descricao;
+    private String description;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TournamentStatus status;
 
     @Column(name = "start_date", nullable = false)
-    private LocalDateTime data_inicio;
+    private LocalDateTime startDate;
 
     @Column(name = "end_date")
-    private LocalDateTime data_fim;
+    private LocalDateTime endDate;
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "rule_set_id")
-    private RuleSet regras;
+    private RuleSet ruleSet;
 
     @OneToMany(mappedBy = "tournament", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Match> partidas;
+    private List<Match> matches;
 }

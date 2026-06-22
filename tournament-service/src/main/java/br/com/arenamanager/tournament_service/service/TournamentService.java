@@ -38,21 +38,21 @@ public class TournamentService {
 
     @Transactional
     public TournamentResponse createTournament(TournamentRequest request) {
-        log.info("Criando torneio: nome={}", request.getNome());
+        log.info("Criando torneio: nome={}", request.getName());
 
         Tournament tournament = new Tournament();
-        tournament.setNome(request.getNome());
-        tournament.setDescricao(request.getDescricao());
-        tournament.setData_inicio(request.getData_inicio());
-        tournament.setData_fim(request.getData_fim());
-        tournament.setStatus(TournamentStatus.CRIADO);
+        tournament.setName(request.getName());
+        tournament.setDescription(request.getDescription());
+        tournament.setStartDate(request.getStartDate());
+        tournament.setEndDate(request.getEndDate());
+        tournament.setStatus(TournamentStatus.CREATED);
 
-        if (request.getRegras() != null) {
-            var regrasEntity = new RuleSet();
-            regrasEntity.setFormato(request.getRegras().getFormato());
-            regrasEntity.setMaxParticipantes(request.getRegras().getMaxParticipantes());
-            regrasEntity.setMelhorDe(request.getRegras().getMelhorDe());
-            tournament.setRegras(regrasEntity);
+        if (request.getRuleSet() != null) {
+            var ruleSetEntity = new RuleSet();
+            ruleSetEntity.setFormat(request.getRuleSet().getFormat());
+            ruleSetEntity.setMaxParticipants(request.getRuleSet().getMaxParticipants());
+            ruleSetEntity.setBestOf(request.getRuleSet().getBestOf());
+            tournament.setRuleSet(ruleSetEntity);
         }
 
         Tournament savedTournament = tournamentRepository.save(tournament);
@@ -65,21 +65,21 @@ public class TournamentService {
 
         log.info("Torneio criado: id={}, status={}", savedTournament.getId(), savedTournament.getStatus());
 
-        String formatoTorneio = (savedTournament.getRegras() != null) ? savedTournament.getRegras().getFormato() : "N/A";
+        String tournamentFormat = (savedTournament.getRuleSet() != null) ? savedTournament.getRuleSet().getFormat() : "N/A";
         TournamentCreatedEvent event = new TournamentCreatedEvent(
                 savedTournament.getId(),
-                savedTournament.getNome(),
-                formatoTorneio
+                savedTournament.getName(),
+                tournamentFormat
         );
         tournamentProducer.publishTournamentCreated(event);
 
         return new TournamentResponse(
                 savedTournament.getId(),
-                savedTournament.getNome(),
-                savedTournament.getDescricao(),
+                savedTournament.getName(),
+                savedTournament.getDescription(),
                 savedTournament.getStatus(),
-                savedTournament.getData_inicio(),
-                savedTournament.getData_fim()
+                savedTournament.getStartDate(),
+                savedTournament.getEndDate()
         );
     }
 
@@ -96,21 +96,21 @@ public class TournamentService {
         Tournament tournament = tournamentRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Torneio nao encontrado: " + id));
 
-        if (tournament.getStatus() != TournamentStatus.CRIADO) {
+        if (tournament.getStatus() != TournamentStatus.CREATED) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Torneio nao pode ter inscricoes abertas. Status atual: " + tournament.getStatus());
         }
 
-        tournament.setStatus(TournamentStatus.REGISTRO_ABERTO);
+        tournament.setStatus(TournamentStatus.REGISTRATION_OPEN);
         Tournament saved = tournamentRepository.save(tournament);
 
         return new TournamentResponse(
                 saved.getId(),
-                saved.getNome(),
-                saved.getDescricao(),
+                saved.getName(),
+                saved.getDescription(),
                 saved.getStatus(),
-                saved.getData_inicio(),
-                saved.getData_fim()
+                saved.getStartDate(),
+                saved.getEndDate()
         );
     }
 }

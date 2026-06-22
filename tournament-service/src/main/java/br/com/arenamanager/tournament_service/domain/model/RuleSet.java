@@ -17,11 +17,11 @@ public class RuleSet {
     private Long id;
 
     @Column(nullable = false)
-    private String formato;
+    private String format;
 
     @Column(name = "max_participants", nullable = false)
-    private Integer maxParticipantes;
+    private Integer maxParticipants;
 
     @Column(name = "best_of")
-    private Integer melhorDe;
+    private Integer bestOf;
 }

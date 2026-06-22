@@ -1,6 +1,9 @@
 package br.com.arenamanager.tournament_service.Dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,14 +16,21 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TournamentRequest {
-    private String nome;
-    private String descricao;
 
-    @JsonProperty("data_inicio")
-    private LocalDateTime data_inicio;
+    @NotBlank(message = "O nome do torneio não pode estar em branco")
+    @Size(min = 3, max = 100, message = "O nome deve ter entre 3 e 100 caracteres")
+    private String name;
 
-    @JsonProperty("data_fim")
-    private LocalDateTime data_fim;
+    @Size(max = 500, message = "A descrição deve ter no máximo 500 caracteres")
+    private String description;
 
-    private RuleSetRequest regras;
+    @NotNull(message = "A data de início é obrigatória")
+    private LocalDateTime startDate;
+
+    @NotNull(message = "A data de fim é obrigatória")
+    private LocalDateTime endDate;
+
+    @NotNull(message = "As regras do torneio são obrigatórias")
+    @Valid
+    private RuleSetRequest ruleSet;
 }
