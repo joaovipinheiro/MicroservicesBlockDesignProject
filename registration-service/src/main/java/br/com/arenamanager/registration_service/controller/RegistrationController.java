@@ -35,7 +35,7 @@ public class RegistrationController {
                     request.getPlayerId(), request.getTournamentId(), cid);
             RegistrationResponse response = registrationService.createRegistration(request, cid);
             HttpStatus status = switch (response.getStatus()) {
-                case CONFIRMADO -> HttpStatus.CREATED;
+                case CONFIRMED -> HttpStatus.CREATED;
                 default -> HttpStatus.ACCEPTED;
             };
             log.info("Resposta enviada: POST /api/registrations, status={}, registrationId={}, correlationId={}",
@@ -66,7 +66,7 @@ public class RegistrationController {
         return ResponseEntity.ok(registrationService.getByTournament(tournamentId));
     }
 
-    @PatchMapping("/{id}/cancelar")
+    @PatchMapping("/{id}/cancel")
     public ResponseEntity<RegistrationResponse> cancel(@PathVariable Long id) {
         return ResponseEntity.ok(registrationService.cancelRegistration(id));
     }

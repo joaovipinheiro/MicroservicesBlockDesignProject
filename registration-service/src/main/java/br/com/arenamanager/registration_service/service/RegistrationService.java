@@ -46,24 +46,24 @@ public class RegistrationService {
         Registration registration = new Registration();
         registration.setPlayerId(request.getPlayerId());
         registration.setTournamentId(request.getTournamentId());
-        registration.setMetodoPagamento(request.getMetodoPagamento());
-        registration.setValor(request.getValor());
-        registration.setStatus(RegistrationStatus.AGUARDANDO_PAGAMENTO);
+        registration.setPaymentMethod(request.getPaymentMethod());
+        registration.setAmount(request.getAmount());
+        registration.setStatus(RegistrationStatus.AWAITING_PAYMENT);
 
         Registration saved = registrationRepository.save(registration);
 
         log.info("Chamando payment-service: registrationId={}, valor={}, correlationId={}",
-                saved.getId(), saved.getValor(), correlationId);
+                saved.getId(), saved.getAmount(), correlationId);
 
         PaymentRequest paymentRequest = new PaymentRequest(
                 saved.getPlayerId(),
                 saved.getTournamentId(),
-                saved.getValor()
+                saved.getAmount()
         );
 
         paymentClient.processPayment(paymentRequest);
 
-        saved.setStatus(RegistrationStatus.CONFIRMADO);
+        saved.setStatus(RegistrationStatus.CONFIRMED);
         registrationRepository.save(saved);
 
         meterRegistry.counter("registrations.confirmed.total", "service", "registration-service").increment();
@@ -72,15 +72,15 @@ public class RegistrationService {
     }
 
     public RegistrationResponse fallbackRegistration(RegistrationRequest request, String correlationId, Throwable ex) {
-        log.warn("[CIRCUIT BREAKER] payment-service indisponivel. correlationId={}. Motivo: {}. Inscricao salva com status AGUARDANDO_PAGAMENTO.",
+        log.warn("[CIRCUIT BREAKER] payment-service indisponivel. correlationId={}. Motivo: {}. Inscricao salva com status AWAITING_PAYMENT.",
                 correlationId, ex.getMessage());
 
         Registration registration = new Registration();
         registration.setPlayerId(request.getPlayerId());
         registration.setTournamentId(request.getTournamentId());
-        registration.setMetodoPagamento(request.getMetodoPagamento());
-        registration.setValor(request.getValor());
-        registration.setStatus(RegistrationStatus.AGUARDANDO_PAGAMENTO);
+        registration.setPaymentMethod(request.getPaymentMethod());
+        registration.setAmount(request.getAmount());
+        registration.setStatus(RegistrationStatus.AWAITING_PAYMENT);
 
         Registration saved = registrationRepository.save(registration);
 
@@ -116,14 +116,14 @@ public class RegistrationService {
         Registration registration = registrationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Inscricao nao encontrada: " + id));
 
-        if (registration.getStatus() == RegistrationStatus.CANCELADO) {
+        if (registration.getStatus() == RegistrationStatus.CANCELLED) {
             throw new BusinessException("Inscricao " + id + " ja esta cancelada.");
         }
-        if (registration.getStatus() == RegistrationStatus.CONFIRMADO) {
+        if (registration.getStatus() == RegistrationStatus.CONFIRMED) {
             throw new BusinessException("Inscricao " + id + " ja foi confirmada e nao pode ser cancelada.");
         }
 
-        registration.setStatus(RegistrationStatus.CANCELADO);
+        registration.setStatus(RegistrationStatus.CANCELLED);
         Registration saved = registrationRepository.save(registration);
 
         meterRegistry.counter("registrations.cancelled.total", "service", "registration-service").increment();
@@ -132,7 +132,7 @@ public class RegistrationService {
     }
 
     private void validateNoDuplicate(Long playerId, Long tournamentId) {
-        if (registrationRepository.existsByPlayerIdAndTournamentIdAndStatusNot(playerId, tournamentId, RegistrationStatus.CANCELADO)) {
+        if (registrationRepository.existsByPlayerIdAndTournamentIdAndStatusNot(playerId, tournamentId, RegistrationStatus.CANCELLED)) {
             throw new BusinessException("Jogador " + playerId + " ja possui inscricao ativa no torneio " + tournamentId + ".");
         }
     }
@@ -140,7 +140,7 @@ public class RegistrationService {
     private void validateTournament(Long tournamentId) {
         try {
             TournamentResponseDTO tournament = tournamentClient.getById(tournamentId);
-            if (!"REGISTRO_ABERTO".equals(tournament.status())) {
+            if (!"REGISTRATION_OPEN".equals(tournament.status())) {
                 throw new BusinessException("Torneio " + tournamentId + " nao esta com inscricoes abertas. Status atual: " + tournament.status());
             }
         } catch (BusinessException e) {
@@ -167,8 +167,8 @@ public class RegistrationService {
                 r.getId(),
                 r.getPlayerId(),
                 r.getTournamentId(),
-                r.getMetodoPagamento(),
-                r.getValor(),
+                r.getPaymentMethod(),
+                r.getAmount(),
                 r.getStatus(),
                 r.getCreatedAt()
         );

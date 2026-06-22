@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 @Data
 @AllArgsConstructor
 public class PaymentRequest {
-    private Long usuarioId;
-    private Long torneioId;
-    private BigDecimal valor;
+    private Long playerId;
+    private Long tournamentId;
+    private BigDecimal amount;
 }

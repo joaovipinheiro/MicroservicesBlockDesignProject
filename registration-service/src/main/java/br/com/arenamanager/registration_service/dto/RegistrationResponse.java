@@ -1,5 +1,6 @@
 package br.com.arenamanager.registration_service.dto;
 
+import br.com.arenamanager.registration_service.domain.model.PaymentMethod;
 import br.com.arenamanager.registration_service.domain.model.RegistrationStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -13,8 +14,8 @@ public class RegistrationResponse {
     private Long id;
     private Long playerId;
     private Long tournamentId;
-    private String metodoPagamento;
-    private BigDecimal valor;
+    private PaymentMethod paymentMethod;
+    private BigDecimal amount;
     private RegistrationStatus status;
     private LocalDateTime createdAt;
 }
