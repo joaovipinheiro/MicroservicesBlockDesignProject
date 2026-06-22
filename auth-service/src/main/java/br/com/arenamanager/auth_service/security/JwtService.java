@@ -30,7 +30,7 @@ public class JwtService {
         return Jwts.builder()
                 .subject(email)
                 .claim("role", role)
-                .claim("tipo", "access")
+                .claim("type", "access")
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(secretKey)
@@ -40,7 +40,7 @@ public class JwtService {
     public String gerarRefreshToken(String email) {
         return Jwts.builder()
                 .subject(email)
-                .claim("tipo", "refresh")
+                .claim("type", "refresh")
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + refreshExpirationMs))
                 .signWith(secretKey)
@@ -56,7 +56,7 @@ public class JwtService {
     }
 
     public boolean isRefreshToken(Claims claims) {
-        return "refresh".equals(claims.get("tipo", String.class));
+        return "refresh".equals(claims.get("type", String.class));
     }
 
     public long getExpirationMs() {

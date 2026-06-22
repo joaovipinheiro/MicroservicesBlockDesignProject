@@ -6,7 +6,7 @@ import lombok.*;
 @Entity
 @Table(name = "tb_usuarios", schema = "auth")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class Usuario {
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -16,7 +16,7 @@ public class Usuario {
     private String email;
 
     @Column(nullable = false)
-    private String senha;
+    private String password;
 
     @Column(nullable = false, length = 50)
     private String role;

@@ -1,8 +1,8 @@
 package br.com.arenamanager.auth_service.service;
 
 import br.com.arenamanager.auth_service.dto.*;
-import br.com.arenamanager.auth_service.model.Usuario;
-import br.com.arenamanager.auth_service.repository.UsuarioRepository;
+import br.com.arenamanager.auth_service.model.User;
+import br.com.arenamanager.auth_service.repository.UserRepository;
 import br.com.arenamanager.auth_service.security.JwtService;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
@@ -15,35 +15,35 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class AuthService {
 
-    private final UsuarioRepository usuarioRepository;
+    private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
     public void registrar(RegisterRequest request) {
-        if (usuarioRepository.existsByEmail(request.email())) {
+        if (userRepository.existsByEmail(request.email())) {
             throw new IllegalArgumentException("Email ja cadastrado: " + request.email());
         }
-        Usuario usuario = Usuario.builder()
+        User user = User.builder()
                 .email(request.email())
-                .senha(passwordEncoder.encode(request.senha()))
+                .password(passwordEncoder.encode(request.password()))
                 .role("USER")
                 .build();
-        usuarioRepository.save(usuario);
-        log.info("Usuario registrado: {}", request.email());
+        userRepository.save(user);
+        log.info("User registrado: {}", request.email());
     }
 
     public TokenResponse login(LoginRequest request) {
-        Usuario usuario = usuarioRepository.findByEmail(request.email())
+        User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new IllegalArgumentException("Credenciais invalidas"));
 
-        if (!passwordEncoder.matches(request.senha(), usuario.getSenha())) {
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new IllegalArgumentException("Credenciais invalidas");
         }
 
-        String accessToken = jwtService.gerarAccessToken(usuario.getEmail(), usuario.getRole());
-        String refreshToken = jwtService.gerarRefreshToken(usuario.getEmail());
+        String accessToken = jwtService.gerarAccessToken(user.getEmail(), user.getRole());
+        String refreshToken = jwtService.gerarRefreshToken(user.getEmail());
 
-        log.info("Login realizado: {}", usuario.getEmail());
+        log.info("Login realizado: {}", user.getEmail());
         return new TokenResponse(accessToken, refreshToken, "Bearer", jwtService.getExpirationMs());
     }
 
@@ -55,11 +55,11 @@ public class AuthService {
         }
 
         String email = claims.getSubject();
-        Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Usuario nao encontrado"));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User nao encontrado"));
 
-        String novoAccessToken = jwtService.gerarAccessToken(usuario.getEmail(), usuario.getRole());
-        String novoRefreshToken = jwtService.gerarRefreshToken(usuario.getEmail());
+        String novoAccessToken = jwtService.gerarAccessToken(user.getEmail(), user.getRole());
+        String novoRefreshToken = jwtService.gerarRefreshToken(user.getEmail());
 
         log.info("Token renovado para: {}", email);
         return new TokenResponse(novoAccessToken, novoRefreshToken, "Bearer", jwtService.getExpirationMs());
