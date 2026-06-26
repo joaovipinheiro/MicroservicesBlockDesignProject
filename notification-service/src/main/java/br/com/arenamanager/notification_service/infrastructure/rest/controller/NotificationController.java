@@ -5,6 +5,8 @@ import br.com.arenamanager.notification_service.infrastructure.mongodb.repositor
 import br.com.arenamanager.notification_service.infrastructure.rest.dto.NotificationLogResponse;
 import br.com.arenamanager.notification_service.infrastructure.rest.dto.PagedResponse;
 import br.com.arenamanager.notification_service.infrastructure.rest.mapper.NotificationLogMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +32,8 @@ public class NotificationController {
      * UUID v4 regex pattern:
      * {@code xxxxxxxx-xxxx-4xxx-[89ab]xxx-xxxxxxxxxxxx}
      */
+    private static final Logger log = LoggerFactory.getLogger(NotificationController.class);
+
     private static final Pattern UUID_V4_PATTERN = Pattern.compile(
             "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
     );
@@ -65,6 +69,8 @@ public class NotificationController {
         validatePlayerId(playerId);
         validatePageSize(size);
 
+        log.info("Requisição recebida: GET /api/notifications/{}, page={}, size={}", playerId, page, size);
+
         Page<NotificationLogDocument> resultPage = repository
                 .findByPlayerIdOrderBySentAtDesc(playerId, PageRequest.of(page, size));
 
@@ -72,6 +78,8 @@ public class NotificationController {
                 .stream()
                 .map(mapper::toResponse)
                 .toList();
+
+        log.info("Resposta enviada: GET /api/notifications/{}, total={}, page={}", playerId, resultPage.getTotalElements(), page);
 
         PagedResponse<NotificationLogResponse> response = new PagedResponse<>(
                 content,

@@ -9,7 +9,7 @@ import br.com.arenamanager.notification_service.infrastructure.rest.mapper.Notif
 import com.mongodb.MongoException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -63,7 +63,7 @@ class NotificationControllerTest {
                 .thenReturn(new PageImpl<>(List.of(doc), PageRequest.of(0, 20), 1));
         when(mapper.toResponse(doc)).thenReturn(response);
 
-        mockMvc.perform(get("/notifications/{playerId}", VALID_PLAYER_ID))
+        mockMvc.perform(get("/api/notifications/{playerId}", VALID_PLAYER_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(1)))
                 .andExpect(jsonPath("$.page", is(0)))
@@ -78,14 +78,14 @@ class NotificationControllerTest {
 
     @Test
     void whenInvalidPlayerId_thenReturns400WithErrorMessage() throws Exception {
-        mockMvc.perform(get("/notifications/{playerId}", "not-a-uuid"))
+        mockMvc.perform(get("/api/notifications/{playerId}", "not-a-uuid"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").isString());
     }
 
     @Test
     void whenPlainStringPlayerId_thenReturns400() throws Exception {
-        mockMvc.perform(get("/notifications/{playerId}", "abc123"))
+        mockMvc.perform(get("/api/notifications/{playerId}", "abc123"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error", is("playerId inválido: deve ser UUID v4")));
     }
@@ -96,7 +96,7 @@ class NotificationControllerTest {
 
     @Test
     void whenSizeExceeds100_thenReturns400() throws Exception {
-        mockMvc.perform(get("/notifications/{playerId}", VALID_PLAYER_ID)
+        mockMvc.perform(get("/api/notifications/{playerId}", VALID_PLAYER_ID)
                         .param("size", "101"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error", is("size não pode exceder 100")));
@@ -111,7 +111,7 @@ class NotificationControllerTest {
         when(repository.findByPlayerIdOrderBySentAtDesc(eq(VALID_PLAYER_ID), any(Pageable.class)))
                 .thenThrow(new MongoException("Connection refused"));
 
-        mockMvc.perform(get("/notifications/{playerId}", VALID_PLAYER_ID))
+        mockMvc.perform(get("/api/notifications/{playerId}", VALID_PLAYER_ID))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.error", is("Erro interno ao consultar notificações")));
     }
@@ -125,7 +125,7 @@ class NotificationControllerTest {
         when(repository.findByPlayerIdOrderBySentAtDesc(eq(VALID_PLAYER_ID), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 20), 0));
 
-        mockMvc.perform(get("/notifications/{playerId}", VALID_PLAYER_ID))
+        mockMvc.perform(get("/api/notifications/{playerId}", VALID_PLAYER_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", empty()))
                 .andExpect(jsonPath("$.totalElements", is(0)));
@@ -140,13 +140,12 @@ class NotificationControllerTest {
         when(repository.findByPlayerIdOrderBySentAtDesc(eq(VALID_PLAYER_ID), any(Pageable.class)))
                 .thenAnswer(invocation -> {
                     Pageable pageable = invocation.getArgument(1);
-                    // Verify defaults
                     assert pageable.getPageNumber() == 0 : "Expected page=0";
                     assert pageable.getPageSize() == 20 : "Expected size=20";
                     return new PageImpl<>(Collections.emptyList(), pageable, 0);
                 });
 
-        mockMvc.perform(get("/notifications/{playerId}", VALID_PLAYER_ID))
+        mockMvc.perform(get("/api/notifications/{playerId}", VALID_PLAYER_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page", is(0)))
                 .andExpect(jsonPath("$.size", is(20)));

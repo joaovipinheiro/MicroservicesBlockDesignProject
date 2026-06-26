@@ -5,6 +5,8 @@ import br.com.arenamanager.notification_service.domain.exception.TemplateNotFoun
 import br.com.arenamanager.notification_service.domain.model.EmailMessage;
 import br.com.arenamanager.notification_service.domain.model.EmailTemplate;
 import br.com.arenamanager.notification_service.infrastructure.kafka.event.PaymentApprovedEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.math.RoundingMode;
@@ -18,6 +20,7 @@ import java.math.RoundingMode;
 @Component
 public class EmailBuilderService {
 
+    private static final Logger log = LoggerFactory.getLogger(EmailBuilderService.class);
     private static final String TEMPLATE_TYPE = "PAGAMENTO_APROVADO";
 
     private final EmailTemplateRepository templateRepository;
@@ -34,9 +37,14 @@ public class EmailBuilderService {
      * @throws TemplateNotFoundException se o template {@code PAGAMENTO_APROVADO} não for encontrado
      */
     public EmailMessage build(PaymentApprovedEvent event) {
+        log.debug("Buscando template: type={}", TEMPLATE_TYPE);
         EmailTemplate template = templateRepository.findByType(TEMPLATE_TYPE)
-                .orElseThrow(() -> new TemplateNotFoundException(TEMPLATE_TYPE));
+                .orElseThrow(() -> {
+                    log.error("Template não encontrado: type={}", TEMPLATE_TYPE);
+                    return new TemplateNotFoundException(TEMPLATE_TYPE);
+                });
 
+        log.debug("Template encontrado, interpolando dados: eventId={}", event.paymentId());
         String body = interpolate(template.bodyHtml(), event);
         String subject = interpolate(template.subject(), event);
 
