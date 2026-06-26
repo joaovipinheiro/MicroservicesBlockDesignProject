@@ -1,0 +1,72 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: notification-service
+
+  # MongoDB
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      username: root
+      password: root
+      database: notification_service
+      authentication-database: admin
+
+  # Kafka Consumer
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: notification-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      enable-auto-commit: false
+      max-poll-records: 10
+    listener:
+      ack-mode: MANUAL_IMMEDIATE
+
+  # Mail (Pode preencher as senhas nas variáveis de ambiente depois)
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:exemplo@gmail.com}
+    password: ${MAIL_PASSWORD:suasenha}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+
+# Tópicos personalizados
+notification:
+  kafka:
+    topic:
+      payments-approved: payments-approved
+      dlq: payments-approved-dlq

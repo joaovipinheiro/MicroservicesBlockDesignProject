@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - analytics-service
+          - api-gateway
+          - auth-service
+          - discovery-server
+          - notification-service
+          - payment-service
+          - player-service
+          - registration-service
+          - tournament-service
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Build e testes - ${{ matrix.service }}
+        working-directory: ${{ matrix.service }}
+        run: ./mvnw -B clean verify

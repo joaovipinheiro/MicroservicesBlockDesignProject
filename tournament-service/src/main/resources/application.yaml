@@ -1,0 +1,72 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: tournament-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/arenamanager?currentSchema=tournament_schema
+    username: root
+    password: root
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: tournament_schema
+        hbm2ddl.create_namespaces: true
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+
+# --- ACTUATOR / MÉTRICAS ---
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+# --- RESILIÊNCIA ---
+resilience4j:
+  circuitbreaker:
+    instances:
+      kafkaPublisher:
+        sliding-window-size: 5
+        failure-rate-threshold: 60
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 2
+        register-health-indicator: true
+
+# --- LOGS ---
+logging:
+  level:
+    root: INFO
+    br.com.arenamanager.tournament_service: DEBUG
+  pattern:
+    console: "%d{ISO8601} [%thread] %-5level %logger{36} [correlationId=%X{correlationId:-nenhum}] - %msg%n"
+
+# --- EUREKA ---
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}

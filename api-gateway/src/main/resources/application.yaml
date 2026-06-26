@@ -1,0 +1,76 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+
+      routes:
+        # --- Rotas PÚBLICAS (sem JWT) ---
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/auth/**
+
+        # --- Rotas PROTEGIDAS (exigem JWT válido) ---
+        - id: player-service
+          uri: lb://player-service
+          predicates:
+            - Path=/api/players/**
+          filters:
+            - JwtAuthFilter
+
+        - id: registration-service
+          uri: lb://registration-service
+          predicates:
+            - Path=/api/registrations/**
+          filters:
+            - JwtAuthFilter
+
+        - id: tournament-service
+          uri: lb://tournament-service
+          predicates:
+            - Path=/api/tournaments/**
+          filters:
+            - JwtAuthFilter
+
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/pagamentos/**
+          filters:
+            - JwtAuthFilter
+
+        - id: analytics-service
+          uri: lb://analytics-service
+          predicates:
+            - Path=/api/analytics/**
+          filters:
+            - JwtAuthFilter
+
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - JwtAuthFilter
+
+jwt:
+  secret: 4arenamanager-secret-key-muito-longa-para-garantir-256-bits-de-seguranca
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
